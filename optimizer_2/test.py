@@ -5,7 +5,6 @@ ws = WsClient("ws://localhost:8001")
 
 int_lower_bound = [-20, -20]
 int_upper_bound = [20, 20]
-
 float_lower_bound = [-20.0, -20.0]
 float_upper_bound = [20.0, 20.0]
 

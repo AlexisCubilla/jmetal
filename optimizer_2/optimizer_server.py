@@ -1,10 +1,7 @@
-import random
 import websockets
 import asyncio
 import json
-from jmetal.core.solution import (CompositeSolution,FloatSolution,IntegerSolution,)
 from optimizer import Optimizer
-from client_ws import WsClient
 
 async def handler(websocket):
     while True:
@@ -12,7 +9,11 @@ async def handler(websocket):
             data = await websocket.recv()
         except websockets.ConnectionClosedOK:
             break
+        #send keep alive response
+        
         await websocket.send(str(resolve(data)))
+        await websocket.close()    
+
 
 
 def resolve(data):
@@ -31,11 +32,9 @@ def resolve(data):
         solutions = op.optimize(int_lower_bound, int_upper_bound, float_lower_bound, float_upper_bound, max_evaluations, number_of_objectives_count)
         return solutions
         
-       
 async def main():
     async with websockets.serve(handler, "localhost", 8001):
         await asyncio.Future()
-
 
 if __name__ == "__main__":
     asyncio.run(main())

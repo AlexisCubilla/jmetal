@@ -18,8 +18,7 @@ def resolve(message):
 
 async def main():
     async with websockets.serve(handler, "localhost", 8000):
-        await asyncio.Future()  # run forever
-
+        await asyncio.Future()
 
 if __name__ == "__main__":
     asyncio.run(main())
