@@ -1,5 +1,5 @@
 import random
-from jmetal.core.solution import (CompositeSolution,FloatSolution,IntegerSolution,)
+from jmetal.core.solution import (CompositeSolution,FloatSolution,IntegerSolution,BinarySolution)
 from jmetal.core.problem import (Problem)
 from client_ws import WsClient
 
@@ -12,6 +12,7 @@ class CustomMixedIntegerFloatProblem(Problem):
         self.float_upper_bound = []
         self.int_lower_bound = []
         self.int_upper_bound = []
+        self.number_of_bits=0
         self.number_of_objectives_count = 0
         # self.obj_directions = [self.MINIMIZE]
         # self.obj_labels = ["Ones"]
@@ -20,8 +21,14 @@ class CustomMixedIntegerFloatProblem(Problem):
         ws = WsClient("ws://localhost:8000")
         a=solution.variables[0].variables
         b=solution.variables[1].variables
+        c=solution.variables[2].variables
+        message={
+            "IntegerVariables":a,
+            "FloatVariables":b,
+            "BinarySolution":c
+        }
         c=str(a+b)
-        objetives=eval(ws.send_data(c))
+        objetives=eval(ws.send_data(str(message)))
 
         for i in range(self.number_of_objectives()):
             solution.objectives[i] = objetives[i]
@@ -34,6 +41,9 @@ class CustomMixedIntegerFloatProblem(Problem):
         float_solution = FloatSolution(
             self.float_lower_bound, self.float_upper_bound, self.number_of_objectives(), self.number_of_constraints()
         )
+        binary_solution = BinarySolution(
+            1, self.number_of_objectives(), self.number_of_constraints()
+        )
 
         float_solution.variables = [
             random.uniform(self.float_lower_bound[i] * 1.0, self.float_upper_bound[i] * 1.0)
@@ -43,9 +53,13 @@ class CustomMixedIntegerFloatProblem(Problem):
             random.randint(self.int_lower_bound[i], self.int_upper_bound[i])
             for i in range(len(self.int_lower_bound))
         ]
+
+        binary_solution.variables[0] = [
+        True if random.randint(0, 1) == 0 else False for _ in range(self.number_of_bits)
+        ]
         print(integer_solution.variables)
 
-        return CompositeSolution([integer_solution, float_solution])
+        return CompositeSolution([integer_solution, float_solution,binary_solution])
     
  
     def number_of_variables(self) -> int:

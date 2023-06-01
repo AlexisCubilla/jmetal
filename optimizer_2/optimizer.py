@@ -1,16 +1,16 @@
 from jmetal.algorithm.multiobjective.nsgaii import NSGAII
-from jmetal.operator import  IntegerPolynomialMutation, PolynomialMutation, SBXCrossover
+from jmetal.operator import  IntegerPolynomialMutation, PolynomialMutation, SBXCrossover, BitFlipMutation
 from jmetal.operator.mutation import CompositeMutation
 from jmetal.util.termination_criterion import StoppingByEvaluations
 from problem import  CustomMixedIntegerFloatProblem
-from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover
+from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover, SPXCrossover
 
 class Optimizer:
     def __init__(self):
         pass
 
 
-    def optimize(self, int_lower_bound, int_upper_bound, float_lower_bound, float_upper_bound, max_evaluations, number_of_objectives):
+    def optimize(self, int_lower_bound, int_upper_bound, float_lower_bound, float_upper_bound, number_of_bits, max_evaluations, number_of_objectives):
         problem = CustomMixedIntegerFloatProblem()
         
         problem.number_of_objectives_count=number_of_objectives
@@ -18,6 +18,7 @@ class Optimizer:
         problem.int_upper_bound=int_upper_bound
         problem.float_lower_bound=float_lower_bound
         problem.float_upper_bound=float_upper_bound
+        problem.number_of_bits = number_of_bits
 
         solutions = Optimizer.run_nsgaii(problem, max_evaluations)
         return self.process_results(solutions)
@@ -27,11 +28,17 @@ class Optimizer:
             problem=problem,
             population_size=100,
             offspring_population_size=100,
-            mutation=CompositeMutation([IntegerPolynomialMutation(0.01, 20), PolynomialMutation(0.01, 20.0)]),
+            mutation=CompositeMutation(
+            [
+                IntegerPolynomialMutation(0.01, 20), 
+                PolynomialMutation(0.01, 20.0),
+                BitFlipMutation(probability=0.1)
+            ]),
             crossover=CompositeCrossover(
             [
                 IntegerSBXCrossover(probability=1.0, distribution_index=20),
                 SBXCrossover(probability=1.0, distribution_index=20),
+                SPXCrossover(probability=0.1)
             ]
         ),
         termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),

@@ -26,10 +26,11 @@ def resolve(data):
         int_upper_bound = message["int"]["upper_bound"]
         float_lower_bound = message["float"]["lower_bound"]
         float_upper_bound = message["float"]["upper_bound"]
+        number_of_bits = message["binary"]["number_of_bits"]
         max_evaluations = message["max_evaluations"]
         number_of_objectives_count = message["number_of_objectives"]
         op = Optimizer()
-        solutions = op.optimize(int_lower_bound, int_upper_bound, float_lower_bound, float_upper_bound, max_evaluations, number_of_objectives_count)
+        solutions = op.optimize(int_lower_bound, int_upper_bound, float_lower_bound, float_upper_bound, number_of_bits, max_evaluations, number_of_objectives_count)
         return solutions
         
 async def main():
