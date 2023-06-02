@@ -27,9 +27,9 @@ def resolve(data):
         float_lower_bound = message["float"]["lower_bound"]
         float_upper_bound = message["float"]["upper_bound"]
         number_of_bits = message["binary"]["number_of_bits"]
-        max_evaluations = message["max_evaluations"]
+        max_evaluations = message["stop_criteria"]["max_evaluations"]
         number_of_objectives_count = message["number_of_objectives"]
-        op = Optimizer()
+        op = Optimizer(message["mutation"], message["crossover"])
         solutions = op.optimize(int_lower_bound, int_upper_bound, float_lower_bound, float_upper_bound, number_of_bits, max_evaluations, number_of_objectives_count)
         return solutions
         

@@ -19,15 +19,14 @@ class CustomMixedIntegerFloatProblem(Problem):
 
     def evaluate(self, solution: CompositeSolution) -> CompositeSolution:
         ws = WsClient("ws://localhost:8000")
-        a=solution.variables[0].variables
-        b=solution.variables[1].variables
-        c=solution.variables[2].variables
-        message={
-            "IntegerVariables":a,
-            "FloatVariables":b,
-            "BinarySolution":c
-        }
-        c=str(a+b)
+        message={}
+        for i in solution.variables:   
+            if(isinstance(i.variables[0], int)):
+                message["int"]=i.variables
+            elif(isinstance(i.variables[0], float)):
+                message["float"]=i.variables
+            else:
+                message["binary"]=i.variables
         objetives=eval(ws.send_data(str(message)))
 
         for i in range(self.number_of_objectives()):
@@ -57,9 +56,8 @@ class CustomMixedIntegerFloatProblem(Problem):
         binary_solution.variables[0] = [
         True if random.randint(0, 1) == 0 else False for _ in range(self.number_of_bits)
         ]
-        print(integer_solution.variables)
 
-        return CompositeSolution([integer_solution, float_solution,binary_solution])
+        return CompositeSolution([integer_solution, float_solution, binary_solution])
     
  
     def number_of_variables(self) -> int:
