@@ -6,24 +6,26 @@ from problem import  CustomMixedIntegerFloatProblem
 from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover, SPXCrossover
 
 class Optimizer:
-    def __init__(self, mutation, crossover):
-        self.has_int=True
-        self.has_float=True
-        self.has_binary=True
-        self.mutations=mutation
-        self.crossovers=crossover
+    def __init__(self, has_int, has_float, has_binary, message):
+        self.problem = CustomMixedIntegerFloatProblem(has_int, has_float, has_binary)
 
-    def optimize(self, int_lower_bound, int_upper_bound, float_lower_bound, float_upper_bound, number_of_bits, max_evaluations, number_of_objectives):
-        problem = CustomMixedIntegerFloatProblem()
-        
-        problem.number_of_objectives_count=number_of_objectives
-        problem.int_lower_bound=int_lower_bound
-        problem.int_upper_bound=int_upper_bound
-        problem.float_lower_bound=float_lower_bound
-        problem.float_upper_bound=float_upper_bound
-        problem.number_of_bits = number_of_bits
+        self.problem.directions=message["directions"]
+        self.problem.number_of_objectives_count = message["number_of_objectives"]
+        if has_int:
+            self.problem.int_lower_bound = message["int"]["lower_bound"]
+            self.problem.int_upper_bound = message["int"]["upper_bound"]
+        if has_float:
+            self.problem.float_lower_bound = message["float"]["lower_bound"]
+            self.problem.float_upper_bound = message["float"]["upper_bound"]
+        if has_binary:
+            self.problem.number_of_bits = message["binary"]["number_of_bits"]
+      
+        self.mutations=message["mutation"]
+        self.crossovers=message["crossover"]
+        self.max_evaluations = message["stop_criteria"]["max_evaluations"]
 
-        solutions = Optimizer.run_nsgaii(self, problem, max_evaluations)
+    def optimize(self):
+        solutions = Optimizer.run_nsgaii(self, self.problem, self.max_evaluations)
         return self.process_results(solutions)
 
     def mutation(self):
@@ -87,7 +89,6 @@ class Optimizer:
             crossover=CompositeCrossover(self.crossover()),
         termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
         )
-
         algorithm.run()
         solutions = algorithm.get_result() 
         return solutions

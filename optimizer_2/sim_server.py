@@ -12,9 +12,9 @@ async def handler(websocket):
 def resolve(message):
     print(message)
     parsed_message = eval(message)
-    first_sum = int(parsed_message["int"][0]) + int(parsed_message["int"][1])
-    second_sum = int(parsed_message["float"][0]) + int(parsed_message["float"][1])
-    reply=str([first_sum,second_sum, parsed_message["binary"]])
+    # first_sum = int(parsed_message["int"][0]) + int(parsed_message["int"][1])
+    second_sum = float(parsed_message["float"][0]) + float(parsed_message["float"][1])
+    reply=str([second_sum])
     print(reply)
     return reply
 

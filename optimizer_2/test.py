@@ -7,16 +7,17 @@ int_lower_bound = [-20, -20]
 int_upper_bound = [20, 20]
 float_lower_bound = [-20.0, -20.0]
 float_upper_bound = [20.0, 20.0]
+directions= [-1,-1]
 number_of_bits = 10
 
 max_evaluations = 1000
 
 message = {
-    "int": {
-        "lower_bound": int_lower_bound,
-        "upper_bound": int_upper_bound,
+    # "int": {
+    #     "lower_bound": int_lower_bound,
+    #     "upper_bound": int_upper_bound,
 
-    },
+    # },
     "float": {
         "lower_bound": float_lower_bound,
         "upper_bound": float_upper_bound
@@ -28,17 +29,18 @@ message = {
         "max_evaluations": max_evaluations,
         "max_seconds": 0
     },
-    "number_of_objectives": 2,
+    "number_of_objectives": 1,
+    "directions":directions,
     "population": 100,
     "offspring_population": 100,
     "simulation_periods":100,
     "mutation": {#puede existir o uno o todos los tipos de mutacion 
-        "int": {#si existe este este tipo "int", entonces elegir uno de los tipos de mutacion que se listan, esto sucede para todos los siguientes, tambien en crossover
-            "IntegerPolynomialMutation": {
-                "probability": 0.01,
-                "distribution_index": 20
-            }
-        },
+        # "int": {#si existe este este tipo "int", entonces elegir uno de los tipos de mutacion que se listan, esto sucede para todos los siguientes, tambien en crossover
+        #     "IntegerPolynomialMutation": {
+        #         "probability": 0.01,
+        #         "distribution_index": 20
+        #     }
+        # },
         "float": {
             "PolynomialMutation": {
                 "probability": 0.01,
@@ -66,12 +68,12 @@ message = {
         
     },
     "crossover": {
-        "int": {
-            "IntegerSBXCrossover": {
-                "probability": 1.0,
-                "distribution_index": 20
-            }
-        },
+        # "int": {
+        #     "IntegerSBXCrossover": {
+        #         "probability": 1.0,
+        #         "distribution_index": 20
+        #     }
+        # },
         "float": {
             "SBXCrossover": {
                 "probability": 1.0,

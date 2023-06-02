@@ -20,17 +20,18 @@ def resolve(data):
     parsed_data = json.loads(data)
     action = parsed_data["action"]
     message = parsed_data["message"]
-
+    has_int, has_float, has_binary = True, True, True
     if action == "optimize":
-        int_lower_bound = message["int"]["lower_bound"]
-        int_upper_bound = message["int"]["upper_bound"]
-        float_lower_bound = message["float"]["lower_bound"]
-        float_upper_bound = message["float"]["upper_bound"]
-        number_of_bits = message["binary"]["number_of_bits"]
-        max_evaluations = message["stop_criteria"]["max_evaluations"]
-        number_of_objectives_count = message["number_of_objectives"]
-        op = Optimizer(message["mutation"], message["crossover"])
-        solutions = op.optimize(int_lower_bound, int_upper_bound, float_lower_bound, float_upper_bound, number_of_bits, max_evaluations, number_of_objectives_count)
+        if message.get("int") is None:
+            has_int=False
+        if message.get("float") is None:
+            has_float=False
+        if message.get("binary") is None:
+            has_binary=False
+        
+    
+        op = Optimizer(has_int, has_float, has_binary, message)
+        solutions = op.optimize()
         return solutions
         
 async def main():
