@@ -12,7 +12,6 @@ class Optimizer:
         self.has_binary=True
         self.mutations=mutation
         self.crossovers=crossover
-        print(type(self.mutations["int"]["IntegerPolynomialMutation"]["distribution_index"]))
 
     def optimize(self, int_lower_bound, int_upper_bound, float_lower_bound, float_upper_bound, number_of_bits, max_evaluations, number_of_objectives):
         problem = CustomMixedIntegerFloatProblem()
@@ -85,13 +84,7 @@ class Optimizer:
             population_size=100,
             offspring_population_size=100,
             mutation=CompositeMutation(self.mutation()),
-            crossover=CompositeCrossover(
-            [
-                IntegerSBXCrossover(probability=1.0, distribution_index=20),
-                SBXCrossover(probability=1.0, distribution_index=20),
-                SPXCrossover(probability=0.1)
-            ]
-        ),
+            crossover=CompositeCrossover(self.crossover()),
         termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
         )
 
