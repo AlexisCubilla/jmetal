@@ -2,28 +2,16 @@ from jmetal.algorithm.multiobjective.nsgaii import NSGAII
 from jmetal.operator import  IntegerPolynomialMutation, PolynomialMutation, SBXCrossover, BitFlipMutation, SimpleRandomMutation, UniformMutation
 from jmetal.operator.mutation import CompositeMutation
 from jmetal.util.termination_criterion import StoppingByEvaluations
-from problem import  CustomMixedIntegerFloatProblem
+from problem import  CustomMixedIntegerFloatBinaryProblem
 from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover, SPXCrossover
 
 class Optimizer:
     def __init__(self, has_int, has_float, has_binary, message):
-        self.problem = CustomMixedIntegerFloatProblem(has_int, has_float, has_binary)
-
-        self.problem.directions=message["directions"]
-        self.problem.number_of_objectives_count = message["number_of_objectives"]
-        if has_int:
-            self.problem.int_lower_bound = message["int"]["lower_bound"]
-            self.problem.int_upper_bound = message["int"]["upper_bound"]
-        if has_float:
-            self.problem.float_lower_bound = message["float"]["lower_bound"]
-            self.problem.float_upper_bound = message["float"]["upper_bound"]
-        if has_binary:
-            self.problem.number_of_bits = message["binary"]["number_of_bits"]
-      
+        self.problem = CustomMixedIntegerFloatBinaryProblem(message, has_int, has_float, has_binary)
         self.mutations=message["mutation"]
         self.crossovers=message["crossover"]
         self.max_evaluations = message["stop_criteria"]["max_evaluations"]
-
+        
     def optimize(self):
         solutions = Optimizer.run_nsgaii(self, self.problem, self.max_evaluations)
         return self.process_results(solutions)

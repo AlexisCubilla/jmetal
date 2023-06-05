@@ -22,12 +22,9 @@ def resolve(data):
     message = parsed_data["message"]
     has_int, has_float, has_binary = True, True, True
     if action == "optimize":
-        if message.get("int") is None:
-            has_int=False
-        if message.get("float") is None:
-            has_float=False
-        if message.get("binary") is None:
-            has_binary=False
+        if message.get("int") is None: has_int=False
+        if message.get("float") is None: has_float=False
+        if message.get("binary") is None: has_binary=False
         
     
         op = Optimizer(has_int, has_float, has_binary, message)

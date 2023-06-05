@@ -3,20 +3,22 @@ from jmetal.core.solution import (CompositeSolution,FloatSolution,IntegerSolutio
 from jmetal.core.problem import (Problem)
 from client_ws import WsClient
 
-class CustomMixedIntegerFloatProblem(Problem):
+class CustomMixedIntegerFloatBinaryProblem(Problem):
 
 
-    def __init__(self, has_int, has_float, has_binary):
-        super(CustomMixedIntegerFloatProblem, self).__init__()
+    def __init__(self, message, has_int, has_float, has_binary):
+        super(CustomMixedIntegerFloatBinaryProblem, self).__init__()
+
+        self.obj_directions=message["directions"]
+        self.number_of_objectives_count = message["number_of_objectives"]
         if has_int:
-            self.int_lower_bound = []
-            self.int_upper_bound = []
-            
+            self.int_lower_bound = message["int"]["lower_bound"]
+            self.int_upper_bound = message["int"]["upper_bound"]
         if has_float:
-            self.float_lower_bound = []
-            self.float_upper_bound = []
+            self.float_lower_bound = message["float"]["lower_bound"]
+            self.float_upper_bound = message["float"]["upper_bound"]
         if has_binary:
-            self.number_of_bits=0
+            self.number_of_bits = message["binary"]["number_of_bits"]
 
         self.has_int=has_int
         self.has_float=has_float
@@ -24,6 +26,7 @@ class CustomMixedIntegerFloatProblem(Problem):
 
 
         self.number_of_objectives_count = 0
+      
         self.obj_directions = []
         # self.obj_labels = ["Ones"]
 
@@ -40,7 +43,9 @@ class CustomMixedIntegerFloatProblem(Problem):
         objetives=eval(ws.send_data(str(message)))
 
         for i in range(self.number_of_objectives()):
-            solution.objectives[i] = objetives[i]
+            # according to the documentation diretions-> -1: Minimize, 1: Maximize, the evaluation asumes minimization so 
+            # we need to multiply by -1 if the objective is to maximize
+            solution.objectives[i] = -1.0*self.obj_directions[i]*objetives[i]
         return solution
 
     def create_solution(self) -> CompositeSolution:
