@@ -2,32 +2,27 @@ import random
 from jmetal.core.solution import (CompositeSolution,FloatSolution,IntegerSolution,BinarySolution)
 from jmetal.core.problem import (Problem)
 from client_ws import WsClient
-
+from data import Data
 class CustomMixedIntegerFloatBinaryProblem(Problem):
 
 
-    def __init__(self, message, has_int, has_float, has_binary):
+    def __init__(self, data: Data):
         super(CustomMixedIntegerFloatBinaryProblem, self).__init__()
 
-        self.obj_directions=message["directions"]
-        self.number_of_objectives_count = message["number_of_objectives"]
-        if has_int:
-            self.int_lower_bound = message["int"]["lower_bound"]
-            self.int_upper_bound = message["int"]["upper_bound"]
-        if has_float:
-            self.float_lower_bound = message["float"]["lower_bound"]
-            self.float_upper_bound = message["float"]["upper_bound"]
-        if has_binary:
-            self.number_of_bits = message["binary"]["number_of_bits"]
+        self.obj_directions=data.directions
+        self.number_of_objectives_count = data.number_of_objectives
+        if data.has_int:
+            self.int_lower_bound = data.int_lower_bound
+            self.int_upper_bound = data.int_upper_bound
+        if data.has_float:
+            self.float_lower_bound = data.float_lower_bound
+            self.float_upper_bound = data.float_upper_bound
+        if data.has_binary:
+            self.number_of_bits = data.number_of_bits
 
-        self.has_int=has_int
-        self.has_float=has_float
-        self.has_binary=has_binary
-
-
-        self.number_of_objectives_count = 0
-      
-        self.obj_directions = []
+        self.has_int=data.has_int
+        self.has_float=data.has_float
+        self.has_binary=data.has_binary
         # self.obj_labels = ["Ones"]
 
     def evaluate(self, solution: CompositeSolution) -> CompositeSolution:
@@ -44,7 +39,7 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
 
         for i in range(self.number_of_objectives()):
             # according to the documentation diretions-> -1: Minimize, 1: Maximize, the evaluation asumes minimization so 
-            # we need to multiply by -1 if the objective is to maximize
+            # -1*-1 takes the minimization as the default
             solution.objectives[i] = -1.0*self.obj_directions[i]*objetives[i]
         return solution
 

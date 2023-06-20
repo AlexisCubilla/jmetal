@@ -4,13 +4,12 @@ from jmetal.operator.mutation import CompositeMutation
 from jmetal.util.termination_criterion import StoppingByEvaluations
 from problem import  CustomMixedIntegerFloatBinaryProblem
 from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover, SPXCrossover
-
+from data import Data, Operator
 class Optimizer:
-    def __init__(self, has_int, has_float, has_binary, message):
-        self.problem = CustomMixedIntegerFloatBinaryProblem(message, has_int, has_float, has_binary)
-        self.mutations=message["mutation"]
-        self.crossovers=message["crossover"]
-        self.max_evaluations = message["stop_criteria"]["max_evaluations"]
+    def __init__(self, data:Data):
+        self.problem = CustomMixedIntegerFloatBinaryProblem(data)
+        self.mutations, self.crossovers = data.operators()
+        self.max_evaluations = data.max_evaluations
         
     def optimize(self):
         solutions = Optimizer.run_nsgaii(self, self.problem, self.max_evaluations)
@@ -25,11 +24,11 @@ class Optimizer:
                         "BitFlipMutation": BitFlipMutation
         }
         mutation_list=[]
-        for _, mutation_info in self.mutations.items():
-            mutation_type = list(mutation_info.keys())[0]
-            probability = mutation_info[mutation_type].get("probability")
-            distribution_index = mutation_info[mutation_type].get("distribution_index")
-            perturbation = mutation_info.get("perturbation")
+        for mutation in self.mutations:
+            mutation_type = mutation.name
+            probability =   mutation.probability
+            distribution_index = mutation.distribution_index
+            perturbation = None #mutation.get("perturbation")
             if probability is not None:
                 if distribution_index is not None:
                     mutation_kwargs = {
@@ -46,6 +45,7 @@ class Optimizer:
                         "probability": probability
                     }
                 mutation_list.append(mapped_mutation_functions[mutation_type](**mutation_kwargs))
+        print(mutation_list)
         return mutation_list
 
 
@@ -56,16 +56,17 @@ class Optimizer:
             "SPXCrossover": SPXCrossover
         }
         crossover_list = []
-        for _, crossover_info in self.crossovers.items():
-                crossover_type = list(crossover_info.keys())[0]
-                probability = crossover_info[crossover_type].get("probability")
-                distribution_index = crossover_info[crossover_type].get("distribution_index")
-                crossover_kwargs = {
-                    "probability": probability
-                }
-                if distribution_index is not None:
-                    crossover_kwargs["distribution_index"] = distribution_index
-                crossover_list.append(mapped_crossover_functions[crossover_type](**crossover_kwargs))
+        for crossover in self.crossovers:
+            crossover_type = crossover.name
+            probability = crossover.probability
+            distribution_index = crossover.distribution_index
+            crossover_kwargs = {
+                "probability": probability
+            }
+            if distribution_index is not None:
+                crossover_kwargs["distribution_index"] = distribution_index
+            crossover_list.append(mapped_crossover_functions[crossover_type](**crossover_kwargs))
+        print(crossover_list)
         return crossover_list
 
     def run_nsgaii(self, problem, max_evaluations):
@@ -84,7 +85,7 @@ class Optimizer:
     def process_results(self, solutions):
         solution= solutions[0]
         final_string = ""
-        variables = solution.variables[0].variables + solution.variables[1].variables
+        variables = solution
         print(variables)
         return final_string
     

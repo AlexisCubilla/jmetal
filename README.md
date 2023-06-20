@@ -1,2 +1,0 @@
-# jmetal
-optimizador jmetal
