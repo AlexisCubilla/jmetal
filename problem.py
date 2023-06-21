@@ -44,7 +44,7 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
         # ws = WsClient("ws://alexis/sim")
         uuids=[]
         values=[]
-   
+        objetives=[]
         for i in solution.variables:   
             if(isinstance(i.variables[0], int)):
                 uuids+=self.int_uuid
@@ -59,7 +59,18 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
         self.message["message"]["variables"]["values"]=values
 
         self.websocket.send(str(json.dumps(self.message)))
-        objetives=self.receive_message("result")
+        receive=self.receive_message("result")
+        receive_dict=json.loads(receive)
+
+        uuid= receive_dict["result"]["uuid"]
+        valor= receive_dict["result"]["value"]
+        uuid_valor_dict = dict(zip(uuid, valor))
+        for uuid in self.function_uuid:
+            valor = uuid_valor_dict.get(uuid)
+            if valor is not None:
+                objetives.append(valor)
+        
+        
         print(objetives)
 
         for i in range(self.number_of_objectives()):
@@ -116,6 +127,5 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
         while True:
             message = self.websocket.recv()
             if condition in message:
-                print(message, "condicion cumplida")
                 break
         return message

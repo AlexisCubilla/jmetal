@@ -54,7 +54,6 @@ def request_model(project_id, scenario_id):
 
     if response.status_code == 200:
         result = response.text
-        print(result)
     else:
         result = None
     return result
@@ -64,7 +63,6 @@ def receive_message(websocket, condition):
         message = websocket.recv()
         print(message)
         if condition in message:
-            print(message, "condicion cumplida")    
             break
     return message
 
