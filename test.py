@@ -1,7 +1,7 @@
 from client_ws import WsClient
 import json
 
-ws = WsClient("ws://localhost:8001")
+ws = WsClient("ws://main/optimizer")
 
 message = {
     "method": "POST",

@@ -4,10 +4,12 @@ from jmetal.operator.mutation import CompositeMutation
 from jmetal.util.termination_criterion import StoppingByEvaluations
 from problem import  CustomMixedIntegerFloatBinaryProblem
 from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover, SPXCrossover
-from data import Data, Operator
+from data import Data
 class Optimizer:
-    def __init__(self, data:Data):
-        self.problem = CustomMixedIntegerFloatBinaryProblem(data)
+    def __init__(self, scenario):
+        data = Data()
+        data.extract_scenario_data(scenario)
+        self.problem = CustomMixedIntegerFloatBinaryProblem(data,scenario )
         self.mutations, self.crossovers = data.operators()
         self.max_evaluations = data.max_evaluations
         
@@ -45,7 +47,6 @@ class Optimizer:
                         "probability": probability
                     }
                 mutation_list.append(mapped_mutation_functions[mutation_type](**mutation_kwargs))
-        print(mutation_list)
         return mutation_list
 
 
@@ -66,7 +67,6 @@ class Optimizer:
             if distribution_index is not None:
                 crossover_kwargs["distribution_index"] = distribution_index
             crossover_list.append(mapped_crossover_functions[crossover_type](**crossover_kwargs))
-        print(crossover_list)
         return crossover_list
 
     def run_nsgaii(self, problem, max_evaluations):

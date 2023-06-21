@@ -5,12 +5,13 @@ from client_ws import WsClient
 from data import Data
 class CustomMixedIntegerFloatBinaryProblem(Problem):
 
-
-    def __init__(self, data: Data):
+    def __init__(self, data: Data, scenario):
         super(CustomMixedIntegerFloatBinaryProblem, self).__init__()
-
+        self.int_uuid=data.int_uuid
+        self.float_uuid=data.float_uuid
+        self.binary_uuid=data.binary_uuid
         self.obj_directions=data.directions
-        self.number_of_objectives_count = data.number_of_objectives
+        self._number_of_objectives = data.number_of_objectives
         if data.has_int:
             self.int_lower_bound = data.int_lower_bound
             self.int_upper_bound = data.int_upper_bound
@@ -25,17 +26,32 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
         self.has_binary=data.has_binary
         # self.obj_labels = ["Ones"]
 
+        self.message = {
+            "scenario": {scenario},
+            "variables": {
+                "uuids": [],
+                "values": []
+            }
+        }
+
     def evaluate(self, solution: CompositeSolution) -> CompositeSolution:
         ws = WsClient("ws://localhost:8000")
-        message={}
+        uuids=[]
+        values=[]
+   
         for i in solution.variables:   
             if(isinstance(i.variables[0], int)):
-                message["int"]=i.variables
+                uuids+=self.int_uuid
+                values+=i.variables
             elif(isinstance(i.variables[0], float)):
-                message["float"]=i.variables
+                uuids+=self.float_uuid
+                values+=i.variables
             else:
-                message["binary"]=i.variables
-        objetives=eval(ws.send_data(str(message)))
+                uuids+=self.binary_uuid
+                values+=i.variables
+        self.message["variables"]["uuids"]=uuids
+        self.message["variables"]["values"]=values
+        objetives=eval(ws.send_data(str(self.message)))
 
         for i in range(self.number_of_objectives()):
             # according to the documentation diretions-> -1: Minimize, 1: Maximize, the evaluation asumes minimization so 
@@ -74,12 +90,11 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
 
         return CompositeSolution(solution)
     
- 
     def number_of_variables(self) -> int:
         return len(self.float_lower_bound) + len(self.int_lower_bound) + self.number_of_bits
 
     def number_of_objectives(self) -> int:
-        return self.number_of_objectives_count
+        return self._number_of_objectives
 
     def number_of_constraints(self) -> int:
         return 0
