@@ -6,10 +6,10 @@ from problem import  CustomMixedIntegerFloatBinaryProblem
 from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover, SPXCrossover
 from data import Data
 class Optimizer:
-    def __init__(self, scenario):
+    def __init__(self, scenario, websocket):
         data = Data()
         data.extract_scenario_data(scenario)
-        self.problem = CustomMixedIntegerFloatBinaryProblem(data,scenario )
+        self.problem = CustomMixedIntegerFloatBinaryProblem(data,scenario, websocket )
         self.mutations, self.crossovers = data.operators()
         self.max_evaluations = data.max_evaluations
         

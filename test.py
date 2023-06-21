@@ -6,8 +6,8 @@ ws = WsClient("ws://main/optimizer")
 message = {
     "method": "POST",
     "action": "get_scenario_model",
-    "project_id": "65c35b37-d464-44d1-b2d5-643059f8291e",
-    "scenario_id":"859ba5ec-9499-4de2-825d-cb3f78b0af79"
+    "project_id": "70f96e6a-963d-4748-b8dc-5196c848ee19",
+    "scenario_id":"8de72d83-ab3b-46b6-a2ce-5f2343001031"
 }
 json_string = json.dumps({"action": "optimize", "message": message})
 

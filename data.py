@@ -19,6 +19,8 @@ class Data:
 
         self.max_evaluations = 0
         self.number_of_objectives = 0
+        self.obj_labels = []
+        self.function_uuid=[]
         self.directions = []
         self.population = 0
         self.offspring_population = 0
@@ -77,6 +79,10 @@ class Data:
         self._binary_uuid.append(uuid)
         self._number_of_bits += 1
     
+    def add_function(self, uuid, direction):
+        self.function_uuid.append(uuid)
+        self.directions.append(direction)
+    
     def operators(self) -> list:
         mutations = []
         crossovers = []
@@ -117,7 +123,7 @@ class Data:
             self._has_binary = bool(self._number_of_bits)
 
         for fn in functions:
-            self.directions.append(fn["direction"])
+            self.add_function(fn["component_id"], fn["direction"])
 
         businessObject = scenario["optimization"][0]["businessObject"]
         self.number_of_objectives = len(functions)

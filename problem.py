@@ -1,3 +1,4 @@
+import json
 import random
 from jmetal.core.solution import (CompositeSolution,FloatSolution,IntegerSolution,BinarySolution)
 from jmetal.core.problem import (Problem)
@@ -5,12 +6,14 @@ from client_ws import WsClient
 from data import Data
 class CustomMixedIntegerFloatBinaryProblem(Problem):
 
-    def __init__(self, data: Data, scenario):
+    def __init__(self, data: Data, scenario, websocket):
         super(CustomMixedIntegerFloatBinaryProblem, self).__init__()
+        self.websocket = websocket
         self.int_uuid=data.int_uuid
         self.float_uuid=data.float_uuid
         self.binary_uuid=data.binary_uuid
-        self.obj_directions=data.directions
+        self.function_uuid=data.function_uuid
+        self.directions=data.directions
         self._number_of_objectives = data.number_of_objectives
         if data.has_int:
             self.int_lower_bound = data.int_lower_bound
@@ -27,15 +30,18 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
         # self.obj_labels = ["Ones"]
 
         self.message = {
-            "scenario": {scenario},
-            "variables": {
-                "uuids": [],
-                "values": []
+            "action": "optimize",
+            "message": {
+                "scenario": scenario,
+                "variables": {
+                    "uuids": [],
+                    "values": []
+                }
             }
         }
 
     def evaluate(self, solution: CompositeSolution) -> CompositeSolution:
-        ws = WsClient("ws://localhost:8000")
+        # ws = WsClient("ws://alexis/sim")
         uuids=[]
         values=[]
    
@@ -48,15 +54,18 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
                 values+=i.variables
             else:
                 uuids+=self.binary_uuid
-                values+=i.variables
-        self.message["variables"]["uuids"]=uuids
-        self.message["variables"]["values"]=values
-        objetives=eval(ws.send_data(str(self.message)))
+                values+=i.variables[0]
+        self.message["message"]["variables"]["uuids"]=uuids
+        self.message["message"]["variables"]["values"]=values
+
+        self.websocket.send(str(json.dumps(self.message)))
+        objetives=self.receive_message("result")
+        print(objetives)
 
         for i in range(self.number_of_objectives()):
             # according to the documentation diretions-> -1: Minimize, 1: Maximize, the evaluation asumes minimization so 
             # -1*-1 takes the minimization as the default
-            solution.objectives[i] = -1.0*self.obj_directions[i]*objetives[i]
+            solution.objectives[i] = -1.0*self.directions[i]*objetives[i]
         return solution
 
     def create_solution(self) -> CompositeSolution:
@@ -101,3 +110,12 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
     
     def name(self) -> str:
         return "Mixed Integer Float Problem"
+    
+
+    def receive_message(self, condition):
+        while True:
+            message = self.websocket.recv()
+            if condition in message:
+                print(message, "condicion cumplida")
+                break
+        return message

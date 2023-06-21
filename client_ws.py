@@ -7,6 +7,7 @@ class WsClient:
         with connect(self.uri, open_timeout=None, close_timeout=None) as websocket:
             websocket.send(str(data))
             message = websocket.recv()
-            websocket.close()
+            print(message)
+            # websocket.close()
             return message
-        
+
