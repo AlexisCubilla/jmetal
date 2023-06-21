@@ -1,0 +1,12 @@
+[Unit]
+Description=Optimizer Service %i
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+ExecStart=python3 optimizer_server.py
+WorkingDirectory=/opt/jmetal
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
