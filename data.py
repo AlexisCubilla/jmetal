@@ -67,13 +67,13 @@ class Data:
     
     def add_int_variable(self, uuid, lower, upper):
         self._int_uuid.append(uuid)
-        self._int_lower_bound.append(lower)
-        self._int_upper_bound.append(upper)
+        self._int_lower_bound.append(int(lower))
+        self._int_upper_bound.append(int(upper))
 
     def add_float_variable(self, uuid, lower, upper):
         self._float_uuid.append(uuid)
-        self._float_lower_bound.append(lower)
-        self._float_upper_bound.append(upper)
+        self._float_lower_bound.append(float(lower))
+        self._float_upper_bound.append(float(upper))
        
     def add_binary_variable(self, uuid):
         self._binary_uuid.append(uuid)
@@ -86,12 +86,14 @@ class Data:
     def operators(self) -> list:
         mutations = []
         crossovers = []
-        if self.has_float:
-            mutations.append(Operator("PolynomialMutation", 0.01, 20))
-            crossovers.append(Operator("SBXCrossover", 1.0, 20))
+
         if self.has_int:
             mutations.append(Operator("IntegerPolynomialMutation", 0.01, 20))
             crossovers.append(Operator("IntegerSBXCrossover", 1.0, 20))
+        if self.has_float:
+            mutations.append(Operator("PolynomialMutation", 0.01, 20))
+            crossovers.append(Operator("SBXCrossover", 1.0, 20))
+
         if self.has_binary:
             mutations.append(Operator("BitFlipMutation", 0.01))
             crossovers.append(Operator("SPXCrossover", 1.0))
@@ -131,7 +133,7 @@ class Data:
         self.population = businessObject["population"]
         self.offspring_population = businessObject["offspring_population"]
         # data.simulation_periods = businessObject["simulation_periods"]
-        
+        self.print()
     
     def print(self):
         print(f"has_int: {self._has_int}")

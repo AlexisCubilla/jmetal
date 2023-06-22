@@ -8,26 +8,31 @@ from websockets.sync.client import connect
 url="http://alexis/diagram"
 action="get_scenario_model"
 method="POST"
+connections = {}
+solutions = {}
+
 async def handler(websocket):
     while True:
         try:
             msg = await websocket.recv()
-        except websockets.ConnectionClosedOK:
-            break
-        #send keep alive response
-        await websocket.send(str(resolve(msg)))
-        await websocket.close()    
+        except websockets.ConnectionClosed as exc:
+            if exc.code == 1006 or exc.code == 1005:
+                print('Connection closed')
+                break
+        await asyncio.create_task(resolve(msg))
 
 
-def resolve(msg):
-    
+async def resolve(msg):
         parsed_message = json.loads(msg)
         action = parsed_message["action"]
         message = parsed_message["message"]
+        scenario_id = message.get("scenario_id")
+        global solutions
+        global connections
+        
         if action == "optimize":
             with connect("ws://alexis/sim", open_timeout=None, close_timeout=None) as websocket:
-                    project_id = message.get("project_id")
-                    scenario_id = message.get("scenario_id")
+                    project_id = message.get("project_id") 
                     message = {
                         "action": "init",
                         "id": scenario_id,
@@ -38,10 +43,19 @@ def resolve(msg):
                     
                     scenario=request_model(project_id, scenario_id)
                     op = Optimizer(scenario,websocket)
-                    solutions = op.optimize()
-                    return "solutions"
-        return scenario
+                    solutions[scenario_id] = op.optimize()
 
+                    await connections[scenario_id].send(solutions[scenario_id])
+        
+        elif action == "init":
+            if scenario_id not in connections: #if the client is not already connected
+                connections[scenario_id] = websocket
+            elif solutions[scenario_id]: #otherwise, if the solution for the client is already calculated
+                await connections[scenario_id].send(solutions[scenario_id])
+        
+        else:
+            print("Action not found")
+            
 
 def request_model(project_id, scenario_id):
     data = {

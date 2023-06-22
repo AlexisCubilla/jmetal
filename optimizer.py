@@ -1,3 +1,4 @@
+import asyncio
 from jmetal.algorithm.multiobjective.nsgaii import NSGAII
 from jmetal.operator import  IntegerPolynomialMutation, PolynomialMutation, SBXCrossover, BitFlipMutation, SimpleRandomMutation, UniformMutation
 from jmetal.operator.mutation import CompositeMutation
@@ -5,6 +6,8 @@ from jmetal.util.termination_criterion import StoppingByEvaluations
 from problem import  CustomMixedIntegerFloatBinaryProblem
 from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover, SPXCrossover
 from data import Data
+from jmetal.util.observer import  ProgressBarObserver
+from jmetal.util.evaluator import MultiprocessEvaluator
 class Optimizer:
     def __init__(self, scenario, websocket):
         data = Data()
@@ -14,7 +17,7 @@ class Optimizer:
         self.max_evaluations = data.max_evaluations
         
     def optimize(self):
-        solutions = Optimizer.run_nsgaii(self, self.problem, self.max_evaluations)
+        solutions = asyncio.create_task( Optimizer.run_nsgaii(self, self.problem, self.max_evaluations))
         return self.process_results(solutions)
 
     def mutation(self):
@@ -72,12 +75,14 @@ class Optimizer:
     def run_nsgaii(self, problem, max_evaluations):
         algorithm = NSGAII(
             problem=problem,
-            population_size=100,
-            offspring_population_size=100,
+            population_size=1,
+            offspring_population_size=1,
             mutation=CompositeMutation(self.mutation()),
             crossover=CompositeCrossover(self.crossover()),
         termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
         )
+        progress_bar = ProgressBarObserver(max=max_evaluations)
+        algorithm.observable.register(progress_bar)
         algorithm.run()
         solutions = algorithm.get_result() 
         return solutions
