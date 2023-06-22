@@ -5,7 +5,9 @@ from optimizer import Optimizer
 import requests
 from websockets.sync.client import connect
 
-url="http://alexis/diagram"
+# url="http://alexis/diagram"
+url_pg="http://sim.cybiraconsulting.local:3001"
+url_sim="ws://sim.cybiraconsulting.local:3000"
 action="get_scenario_model"
 method="POST"
 connections = {}
@@ -31,7 +33,7 @@ async def resolve(msg):
         global connections
         
         if action == "optimize":
-            with connect("ws://alexis/sim", open_timeout=None, close_timeout=None) as websocket:
+            with connect(url_sim, open_timeout=None, close_timeout=None) as websocket:
                     project_id = message.get("project_id") 
                     message = {
                         "action": "init",
@@ -64,7 +66,7 @@ def request_model(project_id, scenario_id):
     "project_id": project_id,
     "scenario_id":scenario_id
     }
-    response = requests.post(url, json=data)
+    response = requests.post(url_pg, json=data)
 
     if response.status_code == 200:
         result = response.text
