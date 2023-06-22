@@ -10,12 +10,12 @@ async def handler(websocket):
         await websocket.send(resolve(message))
 
 def resolve(message):
-    print(message)
+    # print(message)
     parsed_message = eval(message)
     # first_sum = int(parsed_message["int"][0]) + int(parsed_message["int"][1])
     second_sum = float(parsed_message["float"][0]) + float(parsed_message["float"][1])
     reply=str([second_sum])
-    print(reply)
+    # print(reply)
     return reply
 
 async def main():

@@ -4,7 +4,11 @@ from jmetal.operator.mutation import CompositeMutation
 from jmetal.util.termination_criterion import StoppingByEvaluations
 from problem import  CustomMixedIntegerFloatBinaryProblem
 from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover, SPXCrossover
+from jmetal.util.evaluator import MultiprocessEvaluator
+from jmetal.util.observer import  ProgressBarObserver
+import logging
 
+LOGGER = logging.getLogger("jmetal")
 class Optimizer:
     def __init__(self, has_int, has_float, has_binary, message):
         self.problem = CustomMixedIntegerFloatBinaryProblem(message, has_int, has_float, has_binary)
@@ -68,16 +72,22 @@ class Optimizer:
                 crossover_list.append(mapped_crossover_functions[crossover_type](**crossover_kwargs))
         return crossover_list
 
+
     def run_nsgaii(self, problem, max_evaluations):
         algorithm = NSGAII(
+            population_evaluator=MultiprocessEvaluator(32),
             problem=problem,
             population_size=100,
             offspring_population_size=100,
             mutation=CompositeMutation(self.mutation()),
             crossover=CompositeCrossover(self.crossover()),
-        termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
         )
+        progress_bar = ProgressBarObserver(max=max_evaluations)
+        algorithm.observable.register(progress_bar)
         algorithm.run()
+        LOGGER.debug("execution time: %s",algorithm.total_computing_time)
+        # print("Tiempo de ejecucion del algoritmo: ---------------->",)
         solutions = algorithm.get_result() 
         return solutions
 
@@ -85,8 +95,8 @@ class Optimizer:
         solution= solutions[0]
         final_string = ""
         variables = solution.variables[0].variables + solution.variables[1].variables
-        print(variables)
-        return final_string
+        # print(variables)
+        return variables
     
 if __name__ == '__main__':
     pass
