@@ -14,7 +14,7 @@ def resolve(message):
     parsed_message = eval(message)
     # first_sum = int(parsed_message["int"][0]) + int(parsed_message["int"][1])
     # second_sum = float(parsed_message["float"][0]) + float(parsed_message["float"][1])
-    reply=str([random.randint(0, 100), random.randint(0, 100)])
+    reply=str([sum(parsed_message)])
     return reply
 
 async def main():

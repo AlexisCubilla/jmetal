@@ -12,12 +12,12 @@ class Optimizer:
     def __init__(self, scenario, websocket):
         data = Data()
         data.extract_scenario_data(scenario)
-        self.problem = CustomMixedIntegerFloatBinaryProblem(data,scenario, websocket )
+        self.problem = CustomMixedIntegerFloatBinaryProblem(data, scenario, websocket )
         self.mutations, self.crossovers = data.operators()
         self.max_evaluations = data.max_evaluations
         
     def optimize(self):
-        solutions = asyncio.create_task( Optimizer.run_nsgaii(self, self.problem, self.max_evaluations))
+        solutions = self.run_nsgaii(self.problem, self.max_evaluations)
         return self.process_results(solutions)
 
     def mutation(self):
@@ -79,20 +79,21 @@ class Optimizer:
             offspring_population_size=1,
             mutation=CompositeMutation(self.mutation()),
             crossover=CompositeCrossover(self.crossover()),
-        termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
+        termination_criterion=StoppingByEvaluations(max_evaluations=10000),
         )
-        progress_bar = ProgressBarObserver(max=max_evaluations)
+        progress_bar = ProgressBarObserver(max=10000)
         algorithm.observable.register(progress_bar)
         algorithm.run()
         solutions = algorithm.get_result() 
         return solutions
 
     def process_results(self, solutions):
-        solution= solutions[0]
-        final_string = ""
-        variables = solution
-        print(variables)
-        return final_string
+        #return only the first of pareto solutions
+        print("variables")
+        for i in solutions[0].variables:
+            print(i)
+        print("\n objectives", solutions[0].objectives,"\n",)
+        return solutions[0].variables
     
 if __name__ == '__main__':
     pass

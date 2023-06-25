@@ -32,7 +32,6 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
         self.message = {
             "action": "optimize",
             "message": {
-                "scenario": scenario,
                 "variables": {
                     "uuids": [],
                     "values": []
@@ -41,7 +40,6 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
         }
 
     def evaluate(self, solution: CompositeSolution) -> CompositeSolution:
-        # ws = WsClient("ws://alexis/sim")
         uuids=[]
         values=[]
         objetives=[]
@@ -57,11 +55,9 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
                 values+=i.variables[0]
         self.message["message"]["variables"]["uuids"]=uuids
         self.message["message"]["variables"]["values"]=values
-
         self.websocket.send(str(json.dumps(self.message)))
         receive=self.receive_message("result")
         receive_dict=json.loads(receive)
-
         uuid= receive_dict["result"]["uuid"]
         valor= receive_dict["result"]["value"]
         uuid_valor_dict = dict(zip(uuid, valor))
@@ -69,10 +65,6 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
             valor = uuid_valor_dict.get(uuid)
             if valor is not None:
                 objetives.append(valor)
-        
-        
-        print(objetives)
-
         for i in range(self.number_of_objectives()):
             # according to the documentation diretions-> -1: Minimize, 1: Maximize, the evaluation asumes minimization so 
             # -1*-1 takes the minimization as the default
@@ -120,7 +112,7 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
         return 0
     
     def name(self) -> str:
-        return "Mixed Integer Float Problem"
+        return "Mixed Integer Float Binary Problem"
     
 
     def receive_message(self, condition):

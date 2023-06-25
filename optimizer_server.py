@@ -7,7 +7,7 @@ from websockets.sync.client import connect
 
 # url="http://alexis/diagram"
 url_pg="http://sim.cybiraconsulting.local:3001"
-url_sim="ws://sim.cybiraconsulting.local:3000"
+sim_url="ws://sim.cybiraconsulting.local:8001"
 action="get_scenario_model"
 method="POST"
 connections = {}
@@ -21,10 +21,10 @@ async def handler(websocket):
             if exc.code == 1006 or exc.code == 1005:
                 print('Connection closed')
                 break
-        await asyncio.create_task(resolve(msg))
+        asyncio.create_task(resolve(msg, websocket))
 
 
-async def resolve(msg):
+async def resolve(msg, websocket):
         parsed_message = json.loads(msg)
         action = parsed_message["action"]
         message = parsed_message["message"]
@@ -33,26 +33,26 @@ async def resolve(msg):
         global connections
         
         if action == "optimize":
-            with connect(url_sim, open_timeout=None, close_timeout=None) as websocket:
+            with connect(sim_url, open_timeout=None, close_timeout=None) as sim_websocket:
                     project_id = message.get("project_id") 
                     message = {
                         "action": "init",
                         "id": scenario_id,
                         "project_id": project_id,
                     }
-                    websocket.send(str(json.dumps(message)))
-                    receive_message(websocket, "message")
+                    sim_websocket.send(str(json.dumps(message)))
+                    receive_message(sim_websocket, "message")
                     
                     scenario=request_model(project_id, scenario_id)
-                    op = Optimizer(scenario,websocket)
-                    solutions[scenario_id] = op.optimize()
-
-                    await connections[scenario_id].send(solutions[scenario_id])
+                    op = Optimizer(scenario,sim_websocket)
+                    solutions[scenario_id]=op.optimize()
+                    while solutions[scenario_id] is None:
+                        await connections[scenario_id].send(solutions[scenario_id])
         
         elif action == "init":
             if scenario_id not in connections: #if the client is not already connected
                 connections[scenario_id] = websocket
-            elif solutions[scenario_id]: #otherwise, if the solution for the client is already calculated
+            elif solutions.get("scenario_id"): #otherwise, if the solution for the client is already calculated
                 await connections[scenario_id].send(solutions[scenario_id])
         
         else:
@@ -77,7 +77,6 @@ def request_model(project_id, scenario_id):
 def receive_message(websocket, condition):
     while True:
         message = websocket.recv()
-        print(message)
         if condition in message:
             break
     return message

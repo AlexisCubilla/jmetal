@@ -108,7 +108,6 @@ class Data:
 
         for var in variables:
             businessObject = var["businessObject"]
-            print(businessObject)
             var_type = businessObject["type"]
             lower_bound = businessObject.get("lower_bound")
             upper_bound = businessObject.get("upper_bound")
