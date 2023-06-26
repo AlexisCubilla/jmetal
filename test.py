@@ -13,3 +13,4 @@ json_string = json.dumps({"action": "optimize", "message": message})
 print(json_string)
 objetives=ws.send_data(json_string)
 print(objetives)
+

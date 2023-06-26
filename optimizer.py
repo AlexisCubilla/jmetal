@@ -9,16 +9,28 @@ from data import Data
 from jmetal.util.observer import  ProgressBarObserver
 from jmetal.util.evaluator import MultiprocessEvaluator
 class Optimizer:
-    def __init__(self, scenario, websocket):
-        data = Data()
-        data.extract_scenario_data(scenario)
-        self.problem = CustomMixedIntegerFloatBinaryProblem(data, scenario, websocket )
-        self.mutations, self.crossovers = data.operators()
-        self.max_evaluations = data.max_evaluations
+
+    def optimize(self, scenario, websocket):
+        try:
+            data = Data()
+            data.extract_scenario_data(scenario)
+            self.problem = CustomMixedIntegerFloatBinaryProblem(data, scenario, websocket)
+            self.mutations, self.crossovers = data.operators()
+            self.max_evaluations = data.max_evaluations
+            self.population_size = data.population
+            self.offspring_population_size = data.offspring_population
+            
+            solutions = self.run_nsgaii(self.problem, self.max_evaluations)
+
+            if solutions:
+                result= self.process_results(solutions, data)
+                self.save_solution_to_database(result)
+            return result, None
         
-    def optimize(self):
-        solutions = self.run_nsgaii(self.problem, self.max_evaluations)
-        return self.process_results(solutions)
+        except Exception as e:
+            print(e)
+            return None, e
+        
 
     def mutation(self):
         mapped_mutation_functions = {
@@ -72,6 +84,7 @@ class Optimizer:
             crossover_list.append(mapped_crossover_functions[crossover_type](**crossover_kwargs))
         return crossover_list
 
+
     def run_nsgaii(self, problem, max_evaluations):
         algorithm = NSGAII(
             problem=problem,
@@ -79,21 +92,34 @@ class Optimizer:
             offspring_population_size=1,
             mutation=CompositeMutation(self.mutation()),
             crossover=CompositeCrossover(self.crossover()),
-        termination_criterion=StoppingByEvaluations(max_evaluations=10000),
+        termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
         )
-        progress_bar = ProgressBarObserver(max=10000)
+        progress_bar = ProgressBarObserver(max=max_evaluations)
         algorithm.observable.register(progress_bar)
         algorithm.run()
         solutions = algorithm.get_result() 
         return solutions
 
-    def process_results(self, solutions):
-        #return only the first of pareto solutions
-        print("variables")
+
+    def process_results(self, solutions, data:Data):
+        processed_result = {} 
+        uuids = []
+        values = []
         for i in solutions[0].variables:
-            print(i)
-        print("\n objectives", solutions[0].objectives,"\n",)
-        return solutions[0].variables
+            if(isinstance(i.variables[0], int)):
+                uuids+=data.int_uuid
+                values+=i.variables
+            elif(isinstance(i.variables[0], float)):
+                uuids+=data.float_uuid
+                values+=i.variables
+            else:
+                uuids+=data.binary_uuid
+                values+=i.variables[0]
+        
+        processed_result = dict(zip(uuids, values))
+        return processed_result
     
+    def save_solution_to_database(self, result):
+        pass
 if __name__ == '__main__':
     pass

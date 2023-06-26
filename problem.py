@@ -56,7 +56,7 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
         self.message["message"]["variables"]["uuids"]=uuids
         self.message["message"]["variables"]["values"]=values
         self.websocket.send(str(json.dumps(self.message)))
-        receive=self.receive_message("result")
+        receive = self.websocket.recv()
         receive_dict=json.loads(receive)
         uuid= receive_dict["result"]["uuid"]
         valor= receive_dict["result"]["value"]
@@ -113,11 +113,3 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
     
     def name(self) -> str:
         return "Mixed Integer Float Binary Problem"
-    
-
-    def receive_message(self, condition):
-        while True:
-            message = self.websocket.recv()
-            if condition in message:
-                break
-        return message
