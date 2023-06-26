@@ -3,20 +3,20 @@ import json
 
 class Data:
     def __init__(self):
+        # Initialize the attributes for the different types of variables
         self._has_int = False
         self._has_float = False
         self._has_binary = False
         self._float_uuid = []
         self._float_lower_bound = []
         self._float_upper_bound = []
-
         self._int_uuid = []
         self._int_lower_bound = []
         self._int_upper_bound = []
-
         self._binary_uuid = []
         self._number_of_bits = 0
 
+        # Initialize the attributes for the optimization functions and parameters
         self.max_evaluations = 0
         self.number_of_objectives = 0
         self.obj_labels = []

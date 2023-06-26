@@ -1,15 +1,20 @@
 import asyncio
+import json
 from jmetal.algorithm.multiobjective.nsgaii import NSGAII
 from jmetal.operator import  IntegerPolynomialMutation, PolynomialMutation, SBXCrossover, BitFlipMutation, SimpleRandomMutation, UniformMutation
 from jmetal.operator.mutation import CompositeMutation
 from jmetal.util.termination_criterion import StoppingByEvaluations
+import requests
+from database import Database
 from problem import  CustomMixedIntegerFloatBinaryProblem
 from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover, SPXCrossover
 from data import Data
 from jmetal.util.observer import  ProgressBarObserver
 from jmetal.util.evaluator import MultiprocessEvaluator
-class Optimizer:
+url_pg="http://sim.cybiraconsulting.local:3001"
 
+class Optimizer:
+    
     def optimize(self, scenario, websocket):
         try:
             data = Data()
@@ -24,7 +29,8 @@ class Optimizer:
 
             if solutions:
                 result= self.process_results(solutions, data)
-                self.save_solution_to_database(result)
+                db=Database()
+                db.save_scenario(scenario, result)
             return result, None
         
         except Exception as e:
@@ -100,7 +106,6 @@ class Optimizer:
         solutions = algorithm.get_result() 
         return solutions
 
-
     def process_results(self, solutions, data:Data):
         processed_result = {} 
         uuids = []
@@ -117,9 +122,9 @@ class Optimizer:
                 values+=i.variables[0]
         
         processed_result = dict(zip(uuids, values))
+        print(processed_result)
         return processed_result
     
-    def save_solution_to_database(self, result):
-        pass
+    
 if __name__ == '__main__':
     pass
