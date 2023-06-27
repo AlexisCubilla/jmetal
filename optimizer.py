@@ -1,38 +1,46 @@
-import asyncio
 import json
 from jmetal.algorithm.multiobjective.nsgaii import NSGAII
 from jmetal.operator import  IntegerPolynomialMutation, PolynomialMutation, SBXCrossover, BitFlipMutation, SimpleRandomMutation, UniformMutation
 from jmetal.operator.mutation import CompositeMutation
 from jmetal.util.termination_criterion import StoppingByEvaluations
-import requests
 from database import Database
 from problem import  CustomMixedIntegerFloatBinaryProblem
 from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover, SPXCrossover
 from data import Data
 from jmetal.util.observer import  ProgressBarObserver
-from jmetal.util.evaluator import MultiprocessEvaluator
-url_pg="http://sim.cybiraconsulting.local:3001"
+from websockets.sync.client import connect
 
 class Optimizer:
     
-    def optimize(self, scenario, websocket):
+    def optimize(self, scenario_id, project_id):
         try:
-            data = Data()
-            data.extract_scenario_data(scenario)
-            self.problem = CustomMixedIntegerFloatBinaryProblem(data, scenario, websocket)
-            self.mutations, self.crossovers = data.operators()
-            self.max_evaluations = data.max_evaluations
-            self.population_size = data.population
-            self.offspring_population_size = data.offspring_population
-            
-            solutions = self.run_nsgaii(self.problem, self.max_evaluations)
+             with connect("ws://sim.cybiraconsulting.local:8001", open_timeout=None, close_timeout=None) as websocket:
+                message = {"action": "init","id": scenario_id,"project_id": project_id}
+                websocket.send(str(json.dumps(message)))           
+                while True:
+                    message = websocket.recv()
+                    if "message" in message:
+                        break
+                
+                db = Database()
+                scenario = db.get_scenario(project_id, scenario_id)    
+                data = Data()
+                data.extract_scenario_data(scenario)
 
-            if solutions:
-                result= self.process_results(solutions, data)
-                db=Database()
-                db.save_scenario(scenario, result)
-            return result, None
-        
+                self.problem = CustomMixedIntegerFloatBinaryProblem(data, websocket)
+                
+                self.mutations, self.crossovers = data.operators()
+                self.max_evaluations = data.max_evaluations
+                self.population_size = data.population
+                self.offspring_population_size = data.offspring_population
+                
+                solutions = self.run_nsgaii()
+
+                if solutions:
+                    variables= self.process_results(solutions, data)
+                    db.save_optimized_variables(scenario, variables)
+                return variables, None
+             
         except Exception as e:
             print(e)
             return None, e
@@ -91,16 +99,16 @@ class Optimizer:
         return crossover_list
 
 
-    def run_nsgaii(self, problem, max_evaluations):
+    def run_nsgaii(self):
         algorithm = NSGAII(
-            problem=problem,
+            problem=self.problem,
             population_size=1,
             offspring_population_size=1,
             mutation=CompositeMutation(self.mutation()),
             crossover=CompositeCrossover(self.crossover()),
-        termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
+        termination_criterion=StoppingByEvaluations(max_evaluations=self.max_evaluations),
         )
-        progress_bar = ProgressBarObserver(max=max_evaluations)
+        progress_bar = ProgressBarObserver(max=self.max_evaluations)
         algorithm.observable.register(progress_bar)
         algorithm.run()
         solutions = algorithm.get_result() 

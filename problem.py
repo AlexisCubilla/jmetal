@@ -6,7 +6,7 @@ from client_ws import WsClient
 from data import Data
 class CustomMixedIntegerFloatBinaryProblem(Problem):
 
-    def __init__(self, data: Data, scenario, websocket):
+    def __init__(self, data: Data, websocket):
         super(CustomMixedIntegerFloatBinaryProblem, self).__init__()
         self.websocket = websocket
         self.int_uuid=data.int_uuid
@@ -43,6 +43,7 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
         uuids=[]
         values=[]
         objetives=[]
+
         for i in solution.variables:   
             if(isinstance(i.variables[0], int)):
                 uuids+=self.int_uuid
@@ -53,14 +54,18 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
             else:
                 uuids+=self.binary_uuid
                 values+=i.variables[0]
+
         self.message["message"]["variables"]["uuids"]=uuids
         self.message["message"]["variables"]["values"]=values
+
         self.websocket.send(str(json.dumps(self.message)))
         receive = self.websocket.recv()
         receive_dict=json.loads(receive)
+    
         uuid= receive_dict["result"]["uuid"]
         valor= receive_dict["result"]["value"]
         uuid_valor_dict = dict(zip(uuid, valor))
+
         for uuid in self.function_uuid:
             valor = uuid_valor_dict.get(uuid)
             if valor is not None:

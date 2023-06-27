@@ -1,6 +1,5 @@
 import json
 
-
 class Data:
     def __init__(self):
         # Initialize the attributes for the different types of variables
@@ -157,7 +156,6 @@ class Operator:
         self._name = name
         self._probability = probability
         self._distribution_index = distribution_index
-
 
     @property
     def name(self):

@@ -4,11 +4,11 @@ import json
 ws = WsClient("ws://main/optimizer")
 
 message = {
-    "method": "POST",
-    "project_id": "a40c3013-eb9a-44c3-bfe8-8e1af32e40cf",
-    "scenario_id":"3c073387-7b13-4fd9-945e-16ddb44c1544"
+"action": "optimize",
+"project_id": "bb438245-4b48-4864-8854-0810ec92e509",
+"scenario_id": "be88c852-55d3-4baa-aad7-499c45dd837e"
 }
-json_string = json.dumps({"action": "optimize", "message": message})
+json_string = json.dumps(message)
 
 print(json_string)
 objetives=ws.send_data(json_string)
