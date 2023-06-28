@@ -37,7 +37,7 @@ async def resolve(msg, websocket):
                 if err:
                     print(err)
             if solutions.get(scenario_id):
-                await websocket.send(str({"exiting":True, "message":solutions[scenario_id]}))
+                await websocket.send(json.dumps({"exiting":True, "message":solutions[scenario_id]}))
                 print("Solution sent")
                 solutions.pop(scenario_id)
                 connections.pop(scenario_id)
