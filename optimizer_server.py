@@ -30,17 +30,17 @@ async def resolve(msg, websocket):
         global solutions
         global connections
         if action == "optimize":
-            if scenario_id not in  solutions and scenario_id in connections: #if the solution for the client is not calculated yet but the client is already connected
+            if scenario_id not in solutions and scenario_id in connections: #if the solution for the client is not calculated yet but the client is already connected
                 connections[scenario_id] = websocket
                 op = Optimizer()
                 solutions[scenario_id], err = op.optimize(scenario_id, project_id)
                 if err:
                     print(err)
-                if solutions.get(scenario_id):
-                    await websocket.send(str(solutions[scenario_id]))
-                    print("Solution sent")
-                    solutions.pop(scenario_id)
-
+            if solutions.get(scenario_id):
+                await websocket.send(str({"exiting":True, "message":solutions[scenario_id]}))
+                print("Solution sent")
+                solutions.pop(scenario_id)
+                connections.pop(scenario_id)
                 
         elif action == "init":
             if scenario_id not in connections: #if the client is not already connected
