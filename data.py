@@ -127,9 +127,9 @@ class Data:
 
         businessObject = scenario["optimization"][0]["businessObject"]
         self.number_of_objectives = len(functions)
-        self.max_evaluations = businessObject["stop_criteria"]["max_evaluations"]
-        self.population = businessObject["population"]
-        self.offspring_population = businessObject["offspring_population"]
+        self.max_evaluations = int(businessObject["stop_criteria"]["max_evaluations"])
+        self.population = int(businessObject["population"])
+        self.offspring_population = int(businessObject["offspring_population"])
         # data.simulation_periods = businessObject["simulation_periods"]
         self.print()
     

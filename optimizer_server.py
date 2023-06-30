@@ -1,3 +1,4 @@
+import logging
 import websockets
 import asyncio
 import json
@@ -11,14 +12,11 @@ connections = {}
 solutions = {}
 
 async def handler(websocket):
-    while True:
-        try:
-            msg = await websocket.recv()
-        except websockets.ConnectionClosed as exc:
-            if exc.code == 1006 or exc.code == 1005 or exc.code == 1000:
-                print('Connection closed')
-                break
-        asyncio.create_task(resolve(msg, websocket))
+    try:
+        async for msg in websocket:
+            await asyncio.create_task(resolve(msg, websocket))
+    except websockets.exceptions.ConnectionClosedError:
+        logging.info('Connection closed')
 
 
 async def resolve(msg, websocket):
@@ -31,14 +29,18 @@ async def resolve(msg, websocket):
         global connections
         if action == "optimize":
             if scenario_id not in solutions and scenario_id in connections: #if the solution for the client is not calculated yet but the client is already connected
+                logging.info("Calculating solution for scenario %s", scenario_id)
+                
                 connections[scenario_id] = websocket
                 op = Optimizer()
                 solutions[scenario_id], err = op.optimize(scenario_id, project_id)
                 if err:
-                    print(err)
+                    solutions.pop(scenario_id)
+                    logging.error(err)
+
             if solutions.get(scenario_id):
                 await websocket.send(json.dumps({"exiting":True, "message":solutions[scenario_id]}))
-                print("Solution sent")
+                logging.info("Solution sent for scenario %s", scenario_id)
                 solutions.pop(scenario_id)
                 connections.pop(scenario_id)
                 
@@ -49,7 +51,7 @@ async def resolve(msg, websocket):
             #     await connections[scenario_id].send(solutions[scenario_id])
         
         else:
-            print("Action not found")
+            logging.warning("Unknown action: %s", action)
         
 
 async def main():

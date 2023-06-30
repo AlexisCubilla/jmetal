@@ -42,7 +42,6 @@ class Optimizer:
                 return variables, None
              
         except Exception as e:
-            print(e)
             return None, e
         
 
@@ -102,8 +101,8 @@ class Optimizer:
     def run_nsgaii(self):
         algorithm = NSGAII(
             problem=self.problem,
-            population_size=1,
-            offspring_population_size=1,
+            population_size=self.population_size,
+            offspring_population_size=self.offspring_population_size,
             mutation=CompositeMutation(self.mutation()),
             crossover=CompositeCrossover(self.crossover()),
         termination_criterion=StoppingByEvaluations(max_evaluations=self.max_evaluations),
