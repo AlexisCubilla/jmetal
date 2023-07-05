@@ -4,6 +4,7 @@ from jmetal.operator import  IntegerPolynomialMutation, PolynomialMutation, SBXC
 from jmetal.operator.mutation import CompositeMutation
 from jmetal.util.termination_criterion import StoppingByEvaluations
 from database import Database
+from observer import WebSocketObserver
 from problem import  CustomMixedIntegerFloatBinaryProblem
 from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover, SPXCrossover
 from data import Data
@@ -11,6 +12,8 @@ from jmetal.util.observer import  ProgressBarObserver
 from websockets.sync.client import connect
 
 class Optimizer:
+    def __init__(self, websocket):
+        self.websocket = websocket
     
     def optimize(self, scenario_id, project_id):
         try:
@@ -107,8 +110,8 @@ class Optimizer:
             crossover=CompositeCrossover(self.crossover()),
         termination_criterion=StoppingByEvaluations(max_evaluations=self.max_evaluations),
         )
-        progress_bar = ProgressBarObserver(max=self.max_evaluations)
-        algorithm.observable.register(progress_bar)
+        observer = WebSocketObserver(self.websocket, self.max_evaluations)
+        algorithm.observable.register(observer)
         algorithm.run()
         solutions = algorithm.get_result() 
         return solutions
