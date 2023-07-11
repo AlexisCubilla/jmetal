@@ -2,7 +2,7 @@ import logging
 import websockets
 import asyncio
 import json
-from database import Database
+from observer import CustomObserver
 from optimizer import Optimizer
 import concurrent.futures
 
@@ -10,60 +10,67 @@ import concurrent.futures
 # sim_url="ws://server/sim-optimizer"
 
 connections = {}
-solutions = {}
-
+optimizing = {}
+observers = {}
 async def handler(websocket):
     try:
         async for msg in websocket:
-            await asyncio.create_task(resolve(msg, websocket))
+            await resolve(msg, websocket)
     except websockets.exceptions.ConnectionClosed:
         logging.info('Connection closed')
 
 
 async def resolve(msg, websocket):
+  
         parsed_message = json.loads(msg)
-        action = parsed_message["action"]
-        scenario_id = parsed_message.get("scenario_id")
-        project_id = parsed_message.get("project_id") 
+        action, scenario_id, project_id = parsed_message.get("action"), parsed_message.get("scenario_id"), parsed_message.get("project_id")
 
-        global solutions
-        global connections
         if action == "optimize":
-            if scenario_id in connections:
-                connections[scenario_id] = websocket
-                if scenario_id not in solutions:
+            if scenario_id in connections and scenario_id not in optimizing:
                     logging.info("Calculating solution for scenario %s", scenario_id)
-                    solutions[scenario_id] = None
-                    op = Optimizer(connections[scenario_id])
-                    with concurrent.futures.ThreadPoolExecutor() as executor:
-                        # Ejecutar la función op.optimize() en un hilo separado
-                        future = executor.submit(op.optimize, scenario_id, project_id)
+                    optimizing[scenario_id] = True
+                    observers[scenario_id] = CustomObserver()
 
-                        # Esperar a que la función termine y obtener el resultado
-                        solutions[scenario_id], err = await asyncio.get_event_loop().run_in_executor(None, future.result)
+                    op = Optimizer(connections[scenario_id])
+                    progress=asyncio.create_task(send_optimization_progress(websocket, scenario_id))
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        optimizing[scenario_id], err = await asyncio.get_event_loop().run_in_executor(executor, op.optimize, scenario_id, project_id, observers[scenario_id])                    
                     if err:
-                        solutions.pop(scenario_id)
+                        optimizing.pop(scenario_id)
                         logging.error(err)
-            if solutions.get(scenario_id):
-                    await websocket.send(json.dumps({"exiting":True, "message":solutions[scenario_id]}))
+                    await progress
+
+            if optimizing.get(scenario_id):
                     logging.info("Solution sent for scenario %s", scenario_id)
-                    solutions.pop(scenario_id)
+                    optimizing.pop(scenario_id)
                     connections.pop(scenario_id)
-            
+                    observers.pop(scenario_id)
+
         elif action == "init":
-            if scenario_id not in connections: #if the client is not already connected
+            if scenario_id not in connections: 
                 connections[scenario_id] = websocket
-            # elif solutions.get(scenario_id): #otherwise, if the solution for the client is already calculated
-            #     await connections[scenario_id].send(solutions[scenario_id])
-        
+            elif scenario_id in optimizing:
+               print("hola")
+               await asyncio.create_task(send_optimization_progress(websocket, scenario_id))
+
         else:
             logging.warning("Unknown action: %s", action)
-        
+
+       
 
 async def main():
     async with websockets.serve(handler, "optimizer.cybiraconsulting.local", 8001):
         await asyncio.Future()
 
+
+async def send_optimization_progress(websocket, scenario_id):
+    ob:CustomObserver=observers[scenario_id]
+    while websocket.open:
+        await websocket.send(json.dumps({"action": "update", "progress": ob.porcetual_progress, "elapsed":ob.elapsed, "remaining":ob.remaining}))
+        if ob.porcetual_progress == 100:
+            await websocket.send(json.dumps({"exiting":True, "message": optimizing.get(scenario_id)}))
+            break
+        await asyncio.sleep(0.1)
 
 if __name__ == "__main__":
     asyncio.run(main())

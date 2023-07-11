@@ -4,18 +4,17 @@ from jmetal.operator import  IntegerPolynomialMutation, PolynomialMutation, SBXC
 from jmetal.operator.mutation import CompositeMutation
 from jmetal.util.termination_criterion import StoppingByEvaluations
 from database import Database
-from observer import WebSocketObserver
+from observer import CustomObserver
 from problem import  CustomMixedIntegerFloatBinaryProblem
 from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover, SPXCrossover
 from data import Data
-from jmetal.util.observer import  ProgressBarObserver
 from websockets.sync.client import connect
 
 class Optimizer:
     def __init__(self, websocket):
         self.websocket = websocket
     
-    def optimize(self, scenario_id, project_id):
+    def optimize(self, scenario_id, project_id, observer:CustomObserver):
         try:
              with connect("ws://sim.cybiraconsulting.local:8001", open_timeout=None, close_timeout=None) as websocket:
                 message = {"action": "init","id": scenario_id,"project_id": project_id}
@@ -37,7 +36,7 @@ class Optimizer:
                 self.population_size = data.population
                 self.offspring_population_size = data.offspring_population
                 
-                solutions = self.run_nsgaii()
+                solutions = self.run_nsgaii(observer)
 
                 if solutions:
                     variables= self.process_results(solutions, data)
@@ -101,7 +100,7 @@ class Optimizer:
         return crossover_list
 
 
-    def run_nsgaii(self):
+    def run_nsgaii(self, observer:CustomObserver):
         algorithm = NSGAII(
             problem=self.problem,
             population_size=self.population_size,
@@ -110,7 +109,7 @@ class Optimizer:
             crossover=CompositeCrossover(self.crossover()),
         termination_criterion=StoppingByEvaluations(max_evaluations=self.max_evaluations),
         )
-        observer = WebSocketObserver(self.websocket, self.max_evaluations)
+        observer.set_max(self.max_evaluations)
         algorithm.observable.register(observer)
         algorithm.run()
         solutions = algorithm.get_result() 
