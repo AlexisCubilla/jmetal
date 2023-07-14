@@ -43,14 +43,13 @@ async def resolve(msg, websocket):
             if optimizing.get(scenario_id):
                     logging.info("Solution sent for scenario %s", scenario_id)
                     optimizing.pop(scenario_id)
-                    connections.pop(scenario_id)
-                    observers.pop(scenario_id)
+                    # connections.pop(scenario_id)
+                    # observers.pop(scenario_id)
 
         elif action == "init":
             if scenario_id not in connections: 
                 connections[scenario_id] = websocket
             elif scenario_id in optimizing:
-               print("hola")
                await asyncio.create_task(send_optimization_progress(websocket, scenario_id))
 
         else:
@@ -64,12 +63,21 @@ async def main():
 
 
 async def send_optimization_progress(websocket, scenario_id):
-    ob:CustomObserver=observers[scenario_id]
+    ob:CustomObserver = observers[scenario_id]
     while websocket.open:
-        await websocket.send(json.dumps({"action": "update", "progress": ob.porcetual_progress, "elapsed":ob.elapsed, "remaining":ob.remaining}))
-        if ob.porcetual_progress == 100:
-            await websocket.send(json.dumps({"exiting":True, "message": optimizing.get(scenario_id)}))
-            break
+        if ob.solutions:
+            data = {
+                "action": "update",
+                "progress": ob.porcetual_progress,
+                "elapsed": ob.elapsed,
+                "remaining": ob.remaining,
+                "solutions": ob.solutions
+            }
+            await websocket.send(json.dumps(data))
+            if ob.porcetual_progress >= 100:
+                data["exiting"] = True
+                await websocket.send(json.dumps(data))
+                break
         await asyncio.sleep(0.1)
 
 if __name__ == "__main__":

@@ -11,10 +11,28 @@ class CustomObserver(Observer):
         self._remaining=0
         self._elapsed_str=""
         self._remaining_str=""
+        self._solutions=None
 
+
+        
     def update(self, *args, **kwargs):
         evaluations = kwargs["EVALUATIONS"]
-        
+        solutions=kwargs["SOLUTIONS"]
+        if solutions:
+            var = []
+            func= []
+            for i in solutions[0].variables:
+                if(isinstance(i.variables[0], int)):
+                    var+=i.variables
+                elif(isinstance(i.variables[0], float)):
+                    var+=i.variables
+                else:
+                    var+=i.variables[0]
+            
+            for i in solutions[0].objectives:
+                func.append(i)
+
+            self._solutions = {"variables":var, "objectives":func}      
         if not self.progress_bar:
             self.progress_bar = tqdm(total=self._max, ascii=True, desc="Progress")
 
@@ -46,6 +64,9 @@ class CustomObserver(Observer):
     @property
     def remaining(self):
         return self._remaining_str
+    @property
+    def solutions(self):
+        return self._solutions
     
     def set_max(self, max:int):
         self._max = max
