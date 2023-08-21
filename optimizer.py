@@ -28,7 +28,7 @@ class Optimizer:
                 scenario = db.get_scenario(project_id, scenario_id)    
                 data = Data()
                 data.extract_scenario_data(scenario)
-
+                # lista= data.check_empty_parameters()
                 self.problem = CustomMixedIntegerFloatBinaryProblem(data, websocket)
                 
                 self.mutations, self.crossovers = data.operators()

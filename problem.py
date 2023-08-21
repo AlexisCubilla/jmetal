@@ -101,7 +101,7 @@ class CustomMixedIntegerFloatBinaryProblem(Problem):
     def process_message(self, message):
         message_dict: dict = json.loads(message)
         if "error" in message_dict:
-            raise Exception("The simulation failed")
+            raise Exception("The simulation failed:", message_dict["error"])
         uuid: str= message_dict["result"]["uuid"]
         valor: str= message_dict["result"]["value"]
         return dict(zip(uuid, valor))

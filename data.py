@@ -13,16 +13,16 @@ class Data:
         self._int_lower_bound = []
         self._int_upper_bound = []
         self._binary_uuid = []
-        self._number_of_bits = 0
+        self._number_of_bits = None
 
         # Initialize the attributes for the optimization functions and parameters
-        self.max_evaluations = 0
-        self.number_of_objectives = 0
+        self.max_evaluations = None
+        self.number_of_objectives = None
         self.obj_labels = []
         self.function_uuid=[]
         self.directions = []
-        self.population = 0
-        self.offspring_population = 0
+        self.population = None
+        self.offspring_population = None
         # self.simulation_periods = 0
     
     @property
@@ -100,7 +100,7 @@ class Data:
         return mutations, crossovers
     
 
-    def extract_scenario_data(self, scenario_json):
+    def extract_scenario_data(self, scenario_json) -> None:
         scenario=json.loads(scenario_json)
         variables = scenario["optimization"][0]["optimization_variables"]
         functions = scenario["optimization"][0]["optimization_functions"]
@@ -132,8 +132,28 @@ class Data:
         self.offspring_population = int(businessObject["offspring_population"])
         # data.simulation_periods = businessObject["simulation_periods"]
         self.print()
-    
-    def print(self):
+   
+    # def check_empty_parameters(self):
+    #     empty_parameters = []
+    #     if not self._has_int and not self._has_float and not self._has_binary:
+    #         empty_parameters.append("Variables")
+    #     if not self.max_evaluations:
+    #         empty_parameters.append("Max evaluations")
+    #     if not self.number_of_objectives:
+    #         empty_parameters.append("Number of objectives")
+    #     if not self.population:
+    #         empty_parameters.append("Population")
+            
+    #     if not self.offspring_population:
+    #         empty_parameters.append("Offspring population")
+
+    #     print("Empty data: "+ ", ".join(empty_parameters))
+    #     if len(empty_parameters) == 0:
+    #         return ""
+    #     else:
+    #         return "Empty data: "+ ", ".join(empty_parameters)
+
+    def print(self) -> None:
         print(f"has_int: {self._has_int}")
         print(f"has_float: {self._has_float}")
         print(f"has_binary: {self._has_binary}")
@@ -168,4 +188,3 @@ class Operator:
     @property
     def distribution_index(self):
         return self._distribution_index
-    
