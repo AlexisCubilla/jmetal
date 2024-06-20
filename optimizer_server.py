@@ -27,6 +27,7 @@ def resolve(msg, websocket):
                 logging.error(err)
             else:
                 websocket.send(str(json.dumps(optimized)))
+                # websocket.close()
 
 def handle_websocket(websocket):
     try:
