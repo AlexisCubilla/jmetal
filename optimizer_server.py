@@ -27,6 +27,7 @@ async def resolve(msg, websocket):
   
         parsed_message = json.loads(msg)
         print(parsed_message)
+        await websocket.send(msg)
         action, scenario_id, project_id = parsed_message.get("action"), parsed_message.get("scenario_id"), parsed_message.get("project_id")
         
         if action == "optimize":
@@ -62,7 +63,10 @@ async def resolve(msg, websocket):
        
 
 async def main():
-    async with websockets.serve(handler, os.getenv("SIMULATION_WEBSOCKET_HOST"), int(os.getenv("SIMULATION_WEBSOCKET_PORT"))):
+    host = os.getenv("SIMULATION_WEBSOCKET_HOST")
+    port = int(os.getenv("SIMULATION_WEBSOCKET_PORT"))
+    async with websockets.serve(handler, host, port):
+        print(f"Server started at ws://{host}:{port}")
         await asyncio.Future()
 
 
