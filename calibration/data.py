@@ -24,12 +24,10 @@ class CalibrationData:
         if data:
             self.load_data(data)
             self.setBounds()
-        self.print()
 
         
     def load_data(self, data):
         try:
-            print(data)
             self.number_of_constraints = data.get("constraints", 0)
             
             model = data.get("model", {})
@@ -39,21 +37,21 @@ class CalibrationData:
             self.extra_evaluations = model.get("extraEvaluations", 0)
             self.strict_constraint_verification = model.get("strictConstraints", False)
             
-            inputs = data.get("inputs", [])
+            inputs = data.get("inputs", []) 
             for input_data in inputs:
                 id = input_data.get("id")
                 parent = input_data.get("parent")
                 try:
                     default_value = json.loads(input_data.get("metadata", {}).get("default", "{}"))
-                    if not isinstance(default_value, (int, float)):
+                    if not isinstance(default_value, (int, float, str)):
                         default_value = default_value.get("num")
-                        if not isinstance(default_value, (int, float)):
+                        if not isinstance(default_value, (int, float, str)):
                             raise ValueError
                 except AttributeError:
                     raise AttributeError("Invalid message type for default value:"+ str(input_data))
                 self.inputs.append({"id": id,"parent": parent, "data": default_value})
             else:
-                raise ValueError("Invalid message type. Expected 'init'.")
+                raise ValueError("Invalid message type. Expected 'int or float or str'.")
             
                 
         except Exception as e:
