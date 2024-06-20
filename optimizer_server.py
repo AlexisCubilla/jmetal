@@ -17,9 +17,7 @@ observers = {}
 
 def resolve(msg, websocket):
     try:
-        print(msg)
         parsed_message = json.loads(msg)
-        print(parsed_message)
         type, data = parsed_message.get("type"), parsed_message.get("data")
         
         if type == "init":
