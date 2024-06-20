@@ -1,3 +1,4 @@
+import json
 from data import Operator
 
 class CalibrationData:
@@ -5,44 +6,37 @@ class CalibrationData:
     A class used to represent Calibration Data
     """
 
-    def __init__(self):
-        """
-        Initialize CalibrationData with default values
-        """
-        self.id = "uuid"
-        self.utility = "uuid"
-        self.type = "calibration"
-        self.periods = 10
-        
+    def __init__(self, data=None):
+     
         self.population = 10
         self.offspring_population = 1
         self.number_of_objectives = 1
-        self.max_evaluations = 20000
-        self.extra_evaluations = 300
+        self.max_evaluations = 200
+        self.extra_evaluations = 1
         
         self.directions = [-1]
-        self.outputs = [
-            {"id": "1", "value": "13", "time": "2"},
-            {"id": "2", "value": "4", "time": "12"}
-        ]
         self.inputs = [
-            {"id": "1", "value": "0.4"},
-            {"id": "2", "value": "-0.3"}            
         ]
-        
-        self.impacts = [ -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8 ]
-        self.impacts_count = len(self.impacts)
         
         self.lower_bound = []
         self.upper_bound = []
         
-        for input in self.inputs:
-            if float(input['value']) > 0:
-                self.lower_bound.append(0)
-                self.upper_bound.append(1)
+        if data:
+            self.load_data(data)
+
+    def load_data(self, data):
+        try:
+            inputs = data.get("inputs", [])
+            for input_data in inputs:
+                id = input_data.get("id")
+                default_num = json.loads(input_data.get("metadata", {}).get("default", "{}")).get("num")
+                self.inputs.append({"id": id, "default_num": default_num})
             else:
-                self.lower_bound.append(-1)
-                self.upper_bound.append(0)
+                raise ValueError("Invalid message type. Expected 'init'.")
+        except Exception as e:
+            print(f"Error loading inputs from JSON: {e}")
+        print(f"Loaded inputs: {self.inputs}")
+    
 
     def operators(self) -> list:
         """
@@ -54,3 +48,5 @@ class CalibrationData:
         crossovers.append(Operator("SBXCrossover", 1.0, 20))
 
         return mutations, crossovers
+    
+    

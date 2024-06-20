@@ -6,10 +6,8 @@ from jmetal.util.termination_criterion import StoppingByEvaluations
 from calibration.data import CalibrationData
 from calibration.problem import CalibrationProblem
 from calibration.termination_criterion import  StopByEvaluationWithRestrictions
-from calibration.observer import CustomObserver
 from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover, SPXCrossover
 from data import Data
-from websockets.sync.client import connect
 from jmetal.util.observer import ProgressBarObserver
 from jmetal.util.constraint_handling import is_feasible
 from jmetal.core.solution import CompositeSolution
@@ -20,38 +18,22 @@ class OptimizerWithCalibration:
     def __init__(self, websocket):
         self.websocket = websocket
     
-    def optimize(self, scenario_id, project_id, observer:CustomObserver):
-        try:
-             with connect("ws://localhost:8008", open_timeout=None, close_timeout=None) as websocket:
-                # message = {"action": "init","id": scenario_id,"project_id": project_id, "message": {"variables": {"uuids": [], "values": []}}}
-                # websocket.send(str(json.dumps(message)))           
-                # while True:
-                #     message = websocket.recv()
-                #     if "message" in message:
-                #         break
-                
-                # db = Database()
-                # scenario = db.get_scenario(project_id, scenario_id)    
-                data = CalibrationData()
-                # data.extract_scenario_data(scenario)
-                # lista= data.check_empty_parameters()
-                # self.problem = CustomMixedIntegerFloatBinaryProblem(data, websocket)
+    def optimize(self, data_recieved):
+        data = CalibrationData(data_recieved)
 
-                self.problem = CalibrationProblem(data, websocket)
-                self.mutations, self.crossovers = data.operators()
-                self.max_evaluations = data.max_evaluations
-                self.extra_evaluations = data.extra_evaluations
-                self.population_size = data.population
-                self.offspring_population_size = data.offspring_population
-                solutions = self.run_nsgaii(observer)
+        self.problem = CalibrationProblem(data, self.websocket)
+        self.mutations, self.crossovers = data.operators()
+        self.max_evaluations = data.max_evaluations
+        self.extra_evaluations = data.extra_evaluations
+        self.population_size = data.population
+        self.offspring_population_size = data.offspring_population
+        solutions = self.run_nsgaii()
 
-                if solutions:
-                    variables= self.process_results(solutions, data)
-                    # db.save_optimized_variables(scenario, variables)
-                return {}, None
-             
-        except Exception as e:
-            return None, e
+        if solutions:
+            variables= self.process_results(solutions, data)
+            print(variables)
+        return {}, None
+
         
 
     def mutation(self):
@@ -107,7 +89,7 @@ class OptimizerWithCalibration:
         return crossover_list
 
 
-    def run_nsgaii(self, observer:CustomObserver):
+    def run_nsgaii(self):
         algorithm = NSGAII(
             problem=self.problem,
             population_size=self.population_size,
@@ -120,7 +102,7 @@ class OptimizerWithCalibration:
                                                                      extra_evaluations=self.extra_evaluations,
                                                                      check_feasibility=True),
         )
-        observer.set_max(self.max_evaluations)
+        observer = ProgressBarObserver(self.max_evaluations)
         algorithm.observable.register(observer)
         algorithm.run()
         solutions = algorithm.get_result()
