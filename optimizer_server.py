@@ -6,7 +6,9 @@ from calibration.optimizer import OptimizerWithCalibration
 from observer import CustomObserver
 from optimizer import Optimizer
 import concurrent.futures
-
+from dotenv import load_dotenv
+import os
+load_dotenv()
 # url_pg="http://server/diagram"
 # sim_url="ws://server/sim-optimizer"
 
@@ -60,7 +62,7 @@ async def resolve(msg, websocket):
        
 
 async def main():
-    async with websockets.serve(handler, "192.168.10.175", 8002):
+    async with websockets.serve(handler, os.getenv("SIMULATION_WEBSOCKET_HOST"), int(os.getenv("SIMULATION_WEBSOCKET_PORT"))):
         await asyncio.Future()
 
 
