@@ -8,7 +8,6 @@ from calibration.data import CalibrationData
 from calibration.problem import CalibrationProblem
 from calibration.termination_criterion import  StopByEvaluationWithRestrictions
 from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover, SPXCrossover
-from data import Data
 from jmetal.util.observer import ProgressBarObserver
 from jmetal.util.constraint_handling import is_feasible
 from jmetal.core.solution import CompositeSolution
@@ -20,7 +19,7 @@ class OptimizerWithCalibration:
         self.websocket = websocket
     
     def optimize(self, data_recieved):
-        try:
+        # try:
             self.data = CalibrationData(data_recieved)
 
             self.problem = CalibrationProblem(self.data, self.websocket)
@@ -32,11 +31,11 @@ class OptimizerWithCalibration:
             solutions = self.run_nsgaii()
 
             if solutions:
-                variables= self.process_results(solutions, self.data)
+                variables= self.process_results(solutions)
                 
             return self.buildMessage(variables), None
-        except Exception as e:
-            return None, str(e)
+        # except Exception as e:
+        #     return None, str(e)
 
         
     def buildMessage(self, variables:List[float]):
@@ -127,7 +126,7 @@ class OptimizerWithCalibration:
         solutions = algorithm.get_result()
         return solutions
 
-    def process_results(self, solutions:  List[CompositeSolution], data:Data):
+    def process_results(self, solutions:  List[CompositeSolution]):
         min_fitness: float = float("inf")
         final_solution_variables: List[float] = []
         if True: #if check_feasibility:

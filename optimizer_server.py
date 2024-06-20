@@ -3,8 +3,6 @@ import websockets
 import asyncio
 import json
 from calibration.optimizer import OptimizerWithCalibration
-from observer import CustomObserver
-from optimizer import Optimizer
 from dotenv import load_dotenv
 import os
 import concurrent.futures
@@ -40,10 +38,16 @@ def handle_websocket(websocket):
         pass
 
 def main():
-    host = os.getenv("SIMULATION_WEBSOCKET_HOST")
-    port = int(os.getenv("SIMULATION_WEBSOCKET_PORT"))
-    with serve(handle_websocket, host, port) as server:
-        server.serve_forever()
+    try:
+        host = os.getenv("SIMULATION_WEBSOCKET_HOST")
+        port = int(os.getenv("SIMULATION_WEBSOCKET_PORT"))
+        with serve(handle_websocket, host, port) as server:
+            server.serve_forever()
+            print(f"Server started on {host}:{port}")
+    except KeyboardInterrupt:
+        print("Server stopped by user. Exiting...")
+        return
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

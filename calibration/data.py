@@ -1,5 +1,6 @@
 import json
-from data import Operator
+
+from calibration.operator import Operator
 
 class CalibrationData:
     """
@@ -28,6 +29,7 @@ class CalibrationData:
         
     def load_data(self, data):
         try:
+            print(data)
             self.number_of_constraints = data.get("constraints", 0)
             
             model = data.get("model", {})
@@ -41,8 +43,15 @@ class CalibrationData:
             for input_data in inputs:
                 id = input_data.get("id")
                 parent = input_data.get("parent")
-                default_num = json.loads(input_data.get("metadata", {}).get("default", "{}")).get("num")
-                self.inputs.append({"id": id,"parent": parent, "data": default_num})
+                try:
+                    default_value = json.loads(input_data.get("metadata", {}).get("default", "{}"))
+                    if not isinstance(default_value, (int, float)):
+                        default_value = default_value.get("num")
+                        if not isinstance(default_value, (int, float)):
+                            raise ValueError
+                except AttributeError:
+                    raise AttributeError("Invalid message type for default value:"+ str(input_data))
+                self.inputs.append({"id": id,"parent": parent, "data": default_value})
             else:
                 raise ValueError("Invalid message type. Expected 'init'.")
             
