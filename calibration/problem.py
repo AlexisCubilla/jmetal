@@ -29,13 +29,14 @@ class CalibrationProblem(Problem):
         self.websocket.send(str(json.dumps(self.message)))
         message = self.websocket.recv()
         message_dict: dict = json.loads(message)
-        print(message_dict["data"], "......RECIBIDO")
+        print(".........RECIBIDO......", message_dict["data"])
         type = message_dict["type"]
         if type == "result":
             for i in range(self.number_of_objectives()): 
                 solution.objectives[i] = message_dict["data"]
 
-        self.__evaluate_constraints([1, 2], solution)
+        # self.__evaluate_constraints([1, 2], solution)
+        
         return solution
 
     def __evaluate_constraints(self, constraints, solution: CompositeSolution) -> None:
