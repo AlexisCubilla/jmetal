@@ -40,8 +40,9 @@ class CalibrationData:
             inputs = data.get("inputs", [])
             for input_data in inputs:
                 id = input_data.get("id")
+                parent = input_data.get("parent")
                 default_num = json.loads(input_data.get("metadata", {}).get("default", "{}")).get("num")
-                self.inputs.append({"id": id, "data": default_num})
+                self.inputs.append({"id": id,"parent": parent, "data": default_num})
             else:
                 raise ValueError("Invalid message type. Expected 'init'.")
             
@@ -54,7 +55,6 @@ class CalibrationData:
     def setBounds(self):
         for input in self.inputs:
             if float(input['data']) > 0:
-                
                 self.lower_bound.append(0)
                 self.upper_bound.append(1)
             else:

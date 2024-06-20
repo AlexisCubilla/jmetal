@@ -16,18 +16,17 @@ optimizing = {}
 observers = {}
 
 def resolve(msg, websocket):
-    try:
         parsed_message = json.loads(msg)
         type, data = parsed_message.get("type"), parsed_message.get("data")
         
         if type == "init":
             op = OptimizerWithCalibration(websocket)
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                optimizing, err = executor.submit(op.optimize, data).result()
+                optimized, err = executor.submit(op.optimize, data).result()
             if err:
                 logging.error(err)
-    except Exception as e:
-        logging.error(f"Error resolving message: {e}")
+            else:
+                websocket.send(str(json.dumps(optimized)))
 
 def handle_websocket(websocket):
     try:

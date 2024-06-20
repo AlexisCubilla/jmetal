@@ -3,6 +3,7 @@ from jmetal.algorithm.multiobjective.nsgaii import NSGAII
 from jmetal.operator import  IntegerPolynomialMutation, PolynomialMutation, SBXCrossover, BitFlipMutation, SimpleRandomMutation, UniformMutation
 from jmetal.operator.mutation import CompositeMutation
 from jmetal.util.termination_criterion import StoppingByEvaluations
+import numpy as np
 from calibration.data import CalibrationData
 from calibration.problem import CalibrationProblem
 from calibration.termination_criterion import  StopByEvaluationWithRestrictions
@@ -19,23 +20,39 @@ class OptimizerWithCalibration:
         self.websocket = websocket
     
     def optimize(self, data_recieved):
-        data = CalibrationData(data_recieved)
+        try:
+            self.data = CalibrationData(data_recieved)
 
-        self.problem = CalibrationProblem(data, self.websocket)
-        self.mutations, self.crossovers = data.operators()
-        self.max_evaluations = data.max_evaluations
-        self.extra_evaluations = data.extra_evaluations
-        self.population_size = data.population
-        self.offspring_population_size = data.offspring_population
-        solutions = self.run_nsgaii()
+            self.problem = CalibrationProblem(self.data, self.websocket)
+            self.mutations, self.crossovers = self.data.operators()
+            self.max_evaluations = self.data.max_evaluations
+            self.extra_evaluations = self.data.extra_evaluations
+            self.population_size = self.data.population
+            self.offspring_population_size = self.data.offspring_population
+            solutions = self.run_nsgaii()
 
-        if solutions:
-            variables= self.process_results(solutions, data)
-            print(variables)
-        return {}, None
+            if solutions:
+                variables= self.process_results(solutions, self.data)
+                
+            return self.buildMessage(variables), None
+        except Exception as e:
+            return None, str(e)
 
         
-
+    def buildMessage(self, variables:List[float]):
+        message = {
+            "type": "close",
+            "data": [
+                {
+                    "id": input["id"],
+                    "parent": input["parent"],
+                    "data": variable
+                }
+                for input, variable in zip(self.data.inputs, variables)
+            ]
+        }
+        return message
+        
     def mutation(self):
         mapped_mutation_functions = {
                         "IntegerPolynomialMutation": IntegerPolynomialMutation,
@@ -109,26 +126,17 @@ class OptimizerWithCalibration:
         return solutions
 
     def process_results(self, solutions:  List[CompositeSolution], data:Data):
-        processed_result = {} 
-        uuids = []
-        values = []
-        # for i in solutions[0].variables:
-        #     if(isinstance(i.variables[0], int)):
-        #         uuids+=data.int_uuid
-        #         values+=i.variables
-        #     elif(isinstance(i.variables[0], float)):
-        #         uuids+=data.float_uuid
-        #         values+=i.variables
-        #     else:
-        #         uuids+=data.binary_uuid
-        #         values+=i.variables[0]
-        
-        # processed_result = dict(zip(uuids, values))
-        # print(processed_result)
+        min_fitness: float = float("inf")
+        final_solution_variables: [] = []
         if True: #if check_feasibility:
-            processed_result = [solution for solution in solutions if is_feasible(solution)]
-
-        return processed_result
+            list_of_composite_solutions: List[CompositeSolution] = [solution for solution in solutions if is_feasible(solution)]
+            if list_of_composite_solutions:
+                for i, composite_solution in enumerate(list_of_composite_solutions):
+                    if(composite_solution.variables[0].objectives[0] < min_fitness):
+                        min_fitness = composite_solution.variables[0].objectives[0]
+                        final_solution_variables = composite_solution.variables[0].variables
+                    
+        return final_solution_variables
     
     
 if __name__ == '__main__':
