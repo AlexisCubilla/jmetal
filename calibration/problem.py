@@ -25,16 +25,13 @@ class CalibrationProblem(Problem):
     def evaluate(self, solution: CompositeSolution) -> CompositeSolution:
         for i, impact in enumerate(solution.variables[0].variables):
             self.message["data"]["inputs"][i]["data"] = impact
-        print("ENVIANDO....", self.message)
         self.websocket.send(str(json.dumps(self.message)))
         message = self.websocket.recv()
         message_dict: dict = json.loads(message)
-        print(".........RECIBIDO......", message_dict["data"])
         type = message_dict["type"]
         if type == "result":
             for i in range(self.number_of_objectives()): 
                 solution.objectives[i] = message_dict["data"]
-
         # self.__evaluate_constraints([1, 2], solution)
         
         return solution

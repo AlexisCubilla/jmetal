@@ -26,8 +26,9 @@ class CalibrationData:
             self.setBounds()
 
         
-    def load_data(self, data):
+    def load_data(self, data_received):
         try:
+            data = data_received.get("data", {})   
             self.number_of_constraints = data.get("constraints", 0)
             
             model = data.get("model", {})

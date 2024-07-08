@@ -2,11 +2,15 @@ import logging
 import websockets
 import asyncio
 import json
+from calibration.data import CalibrationData
 from calibration.optimizer import OptimizerWithCalibration
 from dotenv import load_dotenv
 import os
 import concurrent.futures
 from websockets.sync.server import serve
+
+from optimization.data import OptimizationData
+from optimization.optimizer import Optimizer
 load_dotenv()
 
 connections = {}
@@ -14,18 +18,23 @@ optimizing = {}
 observers = {}
 
 def resolve(msg, websocket):
+    try:
         parsed_message = json.loads(msg)
-        type, data = parsed_message.get("type"), parsed_message.get("data")
-        
-        if type == "init":
+        if parsed_message.get("type") == "init":
             op = OptimizerWithCalibration(websocket)
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                optimized, err = executor.submit(op.optimize, data).result()
-            if err:
-                logging.error(err)
-            else:
-                websocket.send(str(json.dumps(optimized)))
-                # websocket.close()
+            data = CalibrationData(parsed_message)
+        elif parsed_message.get("type") == "optimization":
+            parsed_message = parsed_message[0]
+            op = Optimizer(websocket)
+            data = OptimizationData(parsed_message)
+        else:
+            logging.error("Invalid message type")
+            return
+        
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            executor.submit(op.optimize, data).result()
+    except Exception as e:
+        logging.error(f"Error: {e}")
 
 def handle_websocket(websocket):
     try:

@@ -1,93 +1,55 @@
 import json
+
 from optimization.operator import Operator
-from typing import List
 
 class OptimizationData:
-    """
-    A class used to represent Optimization Data
-    """
-
     def __init__(self, data=None):
-        self.population = 10
-        self.offspring_population = 1
-        self.number_of_objectives = 1
-        self.max_evaluations = 200
-        self.extra_evaluations = 1
-        self.simulation_periods = 1
-        self.simulation_iterations = 1
-        self.strict_constraint_verification = False
-        self.model_id = None
-        self.directions = [-1]
-        self.inputs = []
-
-        self.lower_bound = []
-        self.upper_bound = []
-        if data:
-            self.load_data(data)
-            self.setBounds()
-
         # Initialize the attributes for the different types of variables
         self.has_int = False
         self.has_float = False
         self.has_binary = False
-        self.float_uuid:List[str] = []
-        self.float_lower_bound: List[float] = []
-        self.float_upper_bound: List[float] = []
-        self.int_uuid: List[str] = []
-        self.int_lower_bound: List[int] = []
-        self.int_upper_bound: List[int] = []
-        self.binary_uuid: List[str]= []
-        self.number_of_bits: int = None
+        self.float_uuid = []
+        self.float_lower_bound = []
+        self.float_upper_bound = []
+        self.int_uuid = []
+        self.int_lower_bound = []
+        self.int_upper_bound = []
+        self.binary_uuid = []
+        self.number_of_bits = 0
 
-    def load_data(self, data):
-        try:
-            self.number_of_constraints = data.get("constraints", 0)
+        # Initialize the attributes for the optimization functions and parameters
+        self.max_evaluations = None
+        self.extra_evaluations = None
+        self.number_of_objectives = None
+        self.obj_labels = []
+        self.objective_uuid=[]
+        self.directions = []
+        self.population = None
+        self.offspring_population = None
+        self.periods = None
+        self.iterations = None
 
-            model = data.get("model", {})
-            self.population = model.get("population", 10)
-            self.offspring_population = model.get("offspring", 1)
-            self.max_evaluations = model.get("maxEvaluations", 200)
-            self.extra_evaluations = model.get("extraEvaluations", 0)
-            self.strict_constraint_verification = model.get("strictConstraints", False)
-            self.simulation_periods = model.get("periods", 1)
-            self.simulation_iterations = model.get("iterations", 1)
-            self.simulation_model_id = model.get("model_id", None)
-            inputs = data.get("inputs", [])
-            for input_data in inputs:
-                id = input_data.get("id")
-                parent = input_data.get("parent")
-                try:
-                    default_value = json.loads(
-                        input_data.get("metadata", {}).get("default", "{}")
-                    )
-                    if not isinstance(default_value, (int, float, str)):
-                        default_value = default_value.get("num")
-                        if not isinstance(default_value, (int, float, str)):
-                            raise ValueError
-                except AttributeError:
-                    raise AttributeError(
-                        "Invalid message type for default value:" + str(input_data)
-                    )
-                self.inputs.append({"id": id, "parent": parent, "data": default_value})
-            else:
-                raise ValueError(
-                    "Invalid message type. Expected 'int or float or str'."
-                )
+        if data:
+            self.load_data(data)
+            
+    def add_int_variable(self, uuid, lower, upper):
+        self.int_uuid.append(uuid)
+        self.int_lower_bound.append(int(lower))
+        self.int_upper_bound.append(int(upper))
 
-        except Exception as e:
-            print(f"Error loading inputs from JSON: {e}")
-        print(f"Loaded inputs: {self.inputs}")
-
-    def setBounds(self):
-        for input in self.inputs:
-            if float(input["data"]) > 0:
-                self.lower_bound.append(0)
-                self.upper_bound.append(1)
-            else:
-                self.lower_bound.append(-1)
-                self.upper_bound.append(0)
-
-
+    def add_float_variable(self, uuid, lower, upper):
+        self.float_uuid.append(uuid)
+        self.float_lower_bound.append(float(lower))
+        self.float_upper_bound.append(float(upper))
+       
+    def add_binary_variable(self, uuid):
+        self.binary_uuid.append(uuid)
+        self.number_of_bits += 1
+    
+    def add_objective(self, uuid, direction):
+        self.objective_uuid.append(uuid)
+        self.directions.append(direction)
+    
     def operators(self) -> list:
         mutations = []
         crossovers = []
@@ -104,16 +66,53 @@ class OptimizationData:
             crossovers.append(Operator("SPXCrossover", 1.0))
 
         return mutations, crossovers
+    
 
+    def load_data(self, received_data: dict) -> None:
+        attrs = ["max_evaluations", "extra_evaluations", "population", "offspring_population",
+                 "number_of_objectives", "periods", "iterations", "outputs", "periods", "iterations"]
+        for attr in attrs:
+            setattr(self, attr, received_data.get(attr, None))
+
+        variable_addition = {
+            "integer": self.add_int_variable,
+            "float": self.add_float_variable,
+            "binary": self.add_binary_variable
+        }
+        
+        for input in received_data.get("inputs", []):
+            add_variable_func = variable_addition.get(input["type"])
+            if add_variable_func:
+                if input["type"] == "binary":
+                    add_variable_func(input["id"])
+                else:
+                    add_variable_func(input["id"], input["lowerBound"], input["upperBound"])
+
+        self.has_binary = bool(self.number_of_bits)
+        self.has_int = bool(self.int_uuid)
+        self.has_float = bool(self.float_uuid)
+        
+        for output in received_data.get("outputs", []):
+            self.add_objective(output["id"], 1 if output["objective"] == "maximize" else -1)
+        self.print()    
+          
     def print(self) -> None:
+        print(f"has_int: {self.has_int}")
+        print(f"has_float: {self.has_float}")
+        print(f"has_binary: {self.has_binary}")
+        print(f"float_uuid: {self.float_uuid}")
+        print(f"float_lower_bound: {self.float_lower_bound}")
+        print(f"float_upper_bound: {self.float_upper_bound}")
+        print(f"int_uuid: {self.int_uuid}")
+        print(f"int_lower_bound: {self.int_lower_bound}")
+        print(f"int_upper_bound: {self.int_upper_bound}")
+        print(f"binary_uuid: {self.binary_uuid}")
+        print(f"number_of_bits: {self.number_of_bits}")
+        print(f"max_evaluations: {self.max_evaluations}")
+        print(f"number_of_objectives: {self.number_of_objectives}")
+        print(f"objective_uuid: {self.objective_uuid}")
+        print(f"directions: {self.directions}")
         print(f"population: {self.population}")
         print(f"offspring_population: {self.offspring_population}")
-        print(f"number_of_objectives: {self.number_of_objectives}")
-        print(f"max_evaluations: {self.max_evaluations}")
-        print(f"extra_evaluations: {self.extra_evaluations}")
-        print(f"strict_constraint_verification: {self.strict_constraint_verification}")
-        print(f"directions: {self.directions}")
-        print(f"inputs: {self.inputs}")
-        print(f"lower_bound: {self.lower_bound}")
-        print(f"upper_bound: {self.upper_bound}")
-        print(f"number_of_constraints: {self.number_of_constraints}")
+        print(f"periods: {self.periods}")
+        print(f"iterations: {self.iterations}")

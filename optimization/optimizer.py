@@ -2,56 +2,50 @@ import json
 from jmetal.algorithm.multiobjective.nsgaii import NSGAII
 from jmetal.operator import  IntegerPolynomialMutation, PolynomialMutation, SBXCrossover, BitFlipMutation, SimpleRandomMutation, UniformMutation
 from jmetal.operator.mutation import CompositeMutation
-from jmetal.util.termination_criterion import StoppingByEvaluations
 from optimization.data import OptimizationData
 from optimization.problem import OptimizationProblem
 from optimization.termination_criterion import  StopByEvaluationWithRestrictions
 from jmetal.operator.crossover import CompositeCrossover, IntegerSBXCrossover, SPXCrossover
 from jmetal.util.observer import ProgressBarObserver
-from jmetal.util.constraint_handling import is_feasible
 from jmetal.core.solution import CompositeSolution
-from jmetal.core.quality_indicator import FitnessValue
 from typing import List
 
 class Optimizer:
     def __init__(self, websocket):
         self.websocket = websocket
     
-    def optimize(self, data_recieved):
-        # try:
-            self.data = OptimizationData(data_recieved)
-
-            self.problem = OptimizationProblem(self.data, self.websocket)
-            self.mutations, self.crossovers = self.data.operators()
-            self.max_evaluations = self.data.max_evaluations
-            self.extra_evaluations = self.data.extra_evaluations
-            self.population_size = self.data.population
-            self.offspring_population_size = self.data.offspring_population
-            solutions = self.run_nsgaii()
-
-            if solutions:
-                variables= self.process_results(solutions)
-                
-            return self.buildMessage(variables), None
-        # except Exception as e:
-        #     return None, str(e)
+    def optimize(self, data: OptimizationData):
+        self.data = data
+        self.problem = OptimizationProblem(self.data, self.websocket)
+        self.mutations, self.crossovers = self.data.operators()
+        self.max_evaluations = self.data.max_evaluations
+        self.extra_evaluations = self.data.extra_evaluations
+        self.population_size = self.data.population
+        self.offspring_population_size = self.data.offspring_population
+        solutions = self.run_nsgaii()
+        if solutions:
+            variables: dict= self.process_results(solutions)
+            for key, value in variables.items():
+                print("key ",key, "value", value)
+        
+        self.websocket.send(str(json.dumps(variables)))
 
         
-    def buildMessage(self, variables:List[float]):
-        message = {
-            "type": "close",
-            "data": {
-                "inputs": [
-                    {
-                        "id": input["id"],
-                        "parent": input["parent"],
-                        "data": variable
-                    }
-                    for input, variable in zip(self.data.inputs, variables)
-                ]
-            }
-        }
-        return message
+    # def build_message(self, composite_solutions_list: List[CompositeSolution]):
+    #     message = {
+    #         "type": "close",
+    #         "data": {
+    #             "inputs": [
+    #                 {
+    #                     "id": input["id"],
+    #                     "parent": input["parent"],
+    #                     "data": solution.variables
+    #                 }
+    #                 for input, solution in zip(self.data.objective_uuid, solutions)
+    #             ]
+    #         }
+    #     }
+    #     return "hola"
         
     def mutation(self):
         mapped_mutation_functions = {
@@ -113,7 +107,6 @@ class Optimizer:
             offspring_population_size=self.offspring_population_size,
             mutation=CompositeMutation(self.mutation()),
             crossover=CompositeCrossover(self.crossover()),
-        # termination_criterion=StoppingByEvaluations(max_evaluations=self.max_evaluations),
             termination_criterion=StopByEvaluationWithRestrictions( 
                                                                      max_evaluations=self.max_evaluations,
                                                                      extra_evaluations=self.extra_evaluations,
@@ -125,19 +118,23 @@ class Optimizer:
         solutions = algorithm.get_result()
         return solutions
 
-    def process_results(self, solutions:  List[CompositeSolution]):
-        min_fitness: float = float("inf")
-        final_solution_variables: List[float] = []
-        if True: #if check_feasibility:
-            list_of_composite_solutions: List[CompositeSolution] = [solution for solution in solutions if is_feasible(solution)]
-            if list_of_composite_solutions:
-                for i, composite_solution in enumerate(list_of_composite_solutions):
-                    if(composite_solution.variables[0].objectives[0] < min_fitness):
-                        min_fitness = composite_solution.variables[0].objectives[0]
-                        final_solution_variables = composite_solution.variables[0].variables
-                    
-        return final_solution_variables
-    
-    
+    def process_results(self, composite_solutions_list: List[CompositeSolution]):
+        def process_solution(solution, uuid_list):
+            if len(solution) != len(uuid_list):
+                print(solution, uuid_list)
+                raise ValueError("Length of solution and uuid_list must match")
+            return [{"id": uuid, "value": value} for uuid, value in zip(uuid_list, solution)]
+        composite_solution_map = {}
+        for index, composite_solutions in enumerate(composite_solutions_list):
+            uuid_value_pairs = []
+            for solutions in composite_solutions.variables:
+                if isinstance(solutions.variables[0], int):
+                    uuid_value_pairs.extend(process_solution(solutions.variables, self.data.int_uuid))
+                elif isinstance(solutions.variables[0], float):
+                    uuid_value_pairs.extend(process_solution(solutions.variables, self.data.float_uuid))
+                else:
+                    uuid_value_pairs.extend(process_solution(solutions.variables[0], self.data.binary_uuid))
+            composite_solution_map[index] = uuid_value_pairs  
+        return composite_solution_map
 if __name__ == '__main__':
     pass

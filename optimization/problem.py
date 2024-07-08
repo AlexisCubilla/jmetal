@@ -1,54 +1,53 @@
 import json
 import random
-from jmetal.core.solution import CompositeSolution, FloatSolution, IntegerSolution, BinarySolution
-from jmetal.core.problem import Problem
+from jmetal.core.solution import (CompositeSolution,FloatSolution,IntegerSolution,BinarySolution)
+from jmetal.core.problem import (Problem)
 from optimization.data import OptimizationData
-
-
 class OptimizationProblem(Problem):
+
     def __init__(self, data: OptimizationData, websocket):
-        super(Problem, self).__init__()
+        super(OptimizationProblem, self).__init__()
         self.websocket = websocket
-        self.data: OptimizationData = data
-        
-        
+        self.data = data
+
         self.message = {
-            "model_id": self.data.simulation_model_id,
-            "periods": self.data.simulation_periods,
-            "iterations": self.data.simulation_iterations,
-            "inputs":[]
+            "action": "simulate",
+            "message": {
+                "variables": {
+                    "uuids": [],
+                    "values": []
+                }
+            }
         }
-        
-        for input in self.data.inputs:
-            self.message["inputs"].append({"id": input["id"], "value": input["data"]})
-            
 
     def evaluate(self, solution: CompositeSolution) -> CompositeSolution:
-        uuid_dicts = {
-                    int: self.data.int_uuid,
-                    float: self.data.float_uuid,
-                    bool: self.data.binary_uuid
-                }
-        for i in solution.variables:
-            var_type = type(i.variables[0])
-            uuid_dict = uuid_dicts.get(var_type, self.data.binary_uuid)
-            
-            for j, value in enumerate(i.variables):
-                self.message["inputs"][j]["id"] = uuid_dict[j]
-                self.message["inputs"][j]["value"] = value
+        uuids=[]
+        values=[]
+        objetives=[]
 
+        for i in solution.variables:   
+            if(isinstance(i.variables[0], int)):
+                uuids+=self.data.int_uuid
+                values+=i.variables
+            elif(isinstance(i.variables[0], float)):
+                uuids+=self.data.float_uuid
+                values+=i.variables
+            else:
+                uuids+=self.data.binary_uuid
+                values+=i.variables[0]
+
+        self.message["message"]["variables"]["uuids"]=uuids
+        self.message["message"]["variables"]["values"]=values
+    
         self.websocket.send(str(json.dumps(self.message)))
         message = self.websocket.recv()
-        message_dict: dict = json.loads(message)
-        for i, value in enumerate(message_dict["value"]):
-            solution.objectives[i] = value
+        objetives = self.process_message(message)
 
-        # self.__evaluate_constraints([1, 2], solution)
-        
+        for i in range(self.number_of_objectives()):
+            # according to the documentation diretions-> -1: Minimize, 1: Maximize, the evaluation asumes minimization so 
+            # -1*-1 takes the minimization as the default
+            solution.objectives[i] = -1.0*self.data.directions[i]*objetives[i]
         return solution
-
-    def __evaluate_constraints(self, constraints, solution: CompositeSolution) -> None:
-        solution.constraints[0] = constraints[0]
 
     def create_solution(self) -> CompositeSolution:
         solution=[]
@@ -80,23 +79,27 @@ class OptimizationProblem(Problem):
             solution.append(binary_solution)
 
         return CompositeSolution(solution)
-
+    
     def number_of_variables(self) -> int:
-        return len(self.data.inputs)
+        return int(self.data.has_int) + int(self.data.has_float) + int(self.data.has_binary)
 
     def number_of_objectives(self) -> int:
         return self.data.number_of_objectives
 
     def number_of_constraints(self) -> int:
         return 0
-
+    
     def name(self) -> str:
-        return "Optimization Problem"
-
+        return "Mixed Integer Float Binary Problem"
+    
     def process_message(self, message):
         message_dict: dict = json.loads(message)
         if "error" in message_dict:
             raise Exception("The simulation failed:", message_dict["error"])
-        uuid: str = message_dict["result"]["uuid"]
-        valor: str = message_dict["result"]["value"]
-        return dict(zip(uuid, valor))
+        uuid: str= message_dict["result"]["uuids"]
+        valor: str= message_dict["result"]["values"]
+        objetives=[]
+
+        for i in range(self.number_of_objectives()):
+            objetives.append(valor[uuid.index(self.data.objective_uuid[i])])
+        return objetives

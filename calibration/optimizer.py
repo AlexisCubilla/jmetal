@@ -18,10 +18,9 @@ class OptimizerWithCalibration:
     def __init__(self, websocket):
         self.websocket = websocket
     
-    def optimize(self, data_recieved):
+    def optimize(self, data):
         # try:
-            self.data = CalibrationData(data_recieved)
-
+            self.data:CalibrationData = data
             self.problem = CalibrationProblem(self.data, self.websocket)
             self.mutations, self.crossovers = self.data.operators()
             self.max_evaluations = self.data.max_evaluations
@@ -33,10 +32,7 @@ class OptimizerWithCalibration:
             if solutions:
                 variables= self.process_results(solutions)
                 
-            return self.buildMessage(variables), None
-        # except Exception as e:
-        #     return None, str(e)
-
+            self.websocket.send(str(json.dumps(self.buildMessage(variables))))
         
     def buildMessage(self, variables:List[float]):
         message = {
