@@ -40,24 +40,31 @@ class CalibrationData:
             
             inputs = data.get("inputs", []) 
             for input_data in inputs:
+                # Asegurar que input_data es un diccionario
+                if not isinstance(input_data, dict):
+                    raise ValueError("Input data must be a dictionary.")
+
                 id = input_data.get("id")
                 parent = input_data.get("parent")
                 try:
-                    default_value = json.loads(input_data.get("metadata", {}).get("default", "{}"))
-                    if not isinstance(default_value, (int, float, str)):
-                        default_value = default_value.get("num")
-                        if not isinstance(default_value, (int, float, str)):
-                            raise ValueError
+                    metadata = input_data.get("metadata", {})
+                    default_value = json.loads(metadata.get("default", "{}"))
+
+                    if isinstance(default_value, dict):
+                        default_value = default_value.get("num", None)
+
+                    if isinstance(default_value, (int, float)):
+                        self.inputs.append({"id": id, "parent": parent, "data": default_value})
+                    else:
+                        print(f"Invalid default value for input {id}: {default_value}")
+                        continue  
+
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"Error decoding JSON for input {id}: {str(e)}")
                 except AttributeError:
-                    raise AttributeError("Invalid message type for default value:"+ str(input_data))
-                self.inputs.append({"id": id,"parent": parent, "data": default_value})
-            else:
-                raise ValueError("Invalid message type. Expected 'int or float or str'.")
-            
-                
+                    raise AttributeError(f"Invalid message type for default value: {input_data}")
         except Exception as e:
-            print(f"Error loading inputs from JSON: {e}")
-        print(f"Loaded inputs: {self.inputs}")
+            raise ValueError(f"Error loading data: {str(e)}")
     
     
     def setBounds(self):
