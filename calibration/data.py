@@ -52,13 +52,16 @@ class CalibrationData:
 
                     if isinstance(default_value, dict):
                         default_value = default_value.get("num", None)
-
+                    
+                    if isinstance(default_value, str):
+                        default_value = float(default_value)
+                        
                     if isinstance(default_value, (int, float)):
                         self.inputs.append({"id": id, "parent": parent, "data": default_value})
                     else:
                         print(f"Invalid default value for input {id}: {default_value}")
                         continue  
-
+                        
                 except json.JSONDecodeError as e:
                     raise ValueError(f"Error decoding JSON for input {id}: {str(e)}")
                 except AttributeError:
