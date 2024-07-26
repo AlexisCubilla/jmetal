@@ -40,6 +40,10 @@ class CalibrationData:
             
             inputs = data.get("inputs", []) 
             for input_data in inputs:
+                # Asegurar que input_data es un diccionario
+                if not isinstance(input_data, dict):
+                    raise ValueError("Input data must be a dictionary.")
+
                 id = input_data.get("id")
                 parent = input_data.get("parent")
                 # try:
@@ -60,8 +64,7 @@ class CalibrationData:
             
                 
         except Exception as e:
-            print(f"Error loading inputs from JSON: {e}")
-        print(f"Loaded inputs: {self.inputs}")
+            raise ValueError(f"Error loading data: {str(e)}")
     
     
     # def setBounds(self):
