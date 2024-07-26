@@ -32,6 +32,7 @@ class CalibrationProblem(Problem):
         if type == "result":
             for i in range(self.number_of_objectives()): 
                 solution.objectives[i] = message_dict["data"]
+                print ("Error: ", message_dict["data"])
         # self.__evaluate_constraints([1, 2], solution)
         
         return solution
