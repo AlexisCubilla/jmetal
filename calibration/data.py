@@ -23,11 +23,11 @@ class CalibrationData:
         self.upper_bound = []
         if data:
             self.load_data(data)
-            self.setBounds()
+            # self.setBounds()
 
         
     def load_data(self, data_received):
-        try:
+        try:   
             data = data_received.get("data", {})   
             self.number_of_constraints = data.get("constraints", 0)
             
@@ -42,17 +42,21 @@ class CalibrationData:
             for input_data in inputs:
                 id = input_data.get("id")
                 parent = input_data.get("parent")
-                try:
-                    default_value = json.loads(input_data.get("metadata", {}).get("default", "{}"))
-                    if not isinstance(default_value, (int, float, str)):
-                        default_value = default_value.get("num")
-                        if not isinstance(default_value, (int, float, str)):
-                            raise ValueError
-                except AttributeError:
-                    raise AttributeError("Invalid message type for default value:"+ str(input_data))
-                self.inputs.append({"id": id,"parent": parent, "data": default_value})
+                # try:
+                #     default_value = json.loads(input_data.get("metadata", {}).get("default", "{}"))
+                #     if not isinstance(default_value, (int, float, str)):
+                #         default_value = default_value.get("num")
+                #         print(f"Default value: {default_value}")
+                #         if not isinstance(default_value, (int, float, str)):
+                #             raise ValueError
+                # except AttributeError:
+                #     raise AttributeError("Invalid message type for default value:"+ str(input_data))
+                # self.inputs.append({"id": id,"parent": parent, "data": default_value})
+                self.inputs.append({"id": id,"parent": parent})
+                self.lower_bound.append(-1)
+                self.upper_bound.append(0)
             else:
-                raise ValueError("Invalid message type. Expected 'int or float or str'.")
+                raise ValueError("An error occurred while loading inputs")
             
                 
         except Exception as e:
@@ -60,14 +64,14 @@ class CalibrationData:
         print(f"Loaded inputs: {self.inputs}")
     
     
-    def setBounds(self):
-        for input in self.inputs:
-            if float(input['data']) > 0:
-                self.lower_bound.append(0)
-                self.upper_bound.append(1)
-            else:
-                self.lower_bound.append(-1)
-                self.upper_bound.append(0)
+    # def setBounds(self):
+    #     for input in self.inputs:
+    #         if float(input['data']) > 0:
+    #             self.lower_bound.append(0)
+    #             self.upper_bound.append(1)
+    #         else:
+    #             self.lower_bound.append(-1)
+    #             self.upper_bound.append(0)
 
     def operators(self) -> list:
         """

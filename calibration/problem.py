@@ -19,7 +19,7 @@ class CalibrationProblem(Problem):
         }
         
         for input in self.data.inputs:
-            self.message["data"]["inputs"].append({"id": input["id"], "data": input["data"]})
+            self.message["data"]["inputs"].append({"id": input["id"]})
             
 
     def evaluate(self, solution: CompositeSolution) -> CompositeSolution:
