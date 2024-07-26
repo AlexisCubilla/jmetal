@@ -132,7 +132,7 @@ class OptimizerWithCalibration:
                     if(composite_solution.variables[0].objectives[0] < min_fitness):
                         min_fitness = composite_solution.variables[0].objectives[0]
                         final_solution_variables = composite_solution.variables[0].variables
-                        print(f"Final solution: {min_fitness}")
+                        print("Final Solution: ",  composite_solution.objectives[0])	           
         return final_solution_variables
     
     
