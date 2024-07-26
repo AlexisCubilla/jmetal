@@ -23,11 +23,11 @@ class CalibrationData:
         self.upper_bound = []
         if data:
             self.load_data(data)
-            # self.setBounds()
+            self.setBounds()
 
         
     def load_data(self, data_received):
-        try:   
+        try:
             data = data_received.get("data", {})   
             self.number_of_constraints = data.get("constraints", 0)
             
@@ -40,34 +40,44 @@ class CalibrationData:
             
             inputs = data.get("inputs", []) 
             for input_data in inputs:
+                # Asegurar que input_data es un diccionario
+                if not isinstance(input_data, dict):
+                    raise ValueError("Input data must be a dictionary.")
+
                 id = input_data.get("id")
                 parent = input_data.get("parent")
-                # try:
-                #     default_value = json.loads(input_data.get("metadata", {}).get("default", "{}"))
-                #     if not isinstance(default_value, (int, float, str)):
-                #         default_value = default_value.get("num")
-                #         print(f"Default value: {default_value}")
-                #         if not isinstance(default_value, (int, float, str)):
-                #             raise ValueError
-                # except AttributeError:
-                #     raise AttributeError("Invalid message type for default value:"+ str(input_data))
-                # self.inputs.append({"id": id,"parent": parent, "data": default_value})
-                self.inputs.append({"id": id,"parent": parent})
-                self.lower_bound.append(-1)
-                self.upper_bound.append(1)
-            print(f"Inputs: {self.inputs}")
+                try:
+                    metadata = input_data.get("metadata", {})
+                    default_value = json.loads(metadata.get("default", "{}"))
+
+                    if isinstance(default_value, dict):
+                        default_value = default_value.get("num", None)
+                    
+                    if isinstance(default_value, str):
+                        default_value = float(default_value)
+                        
+                    if isinstance(default_value, (int, float)):
+                        self.inputs.append({"id": id, "parent": parent, "data": default_value})
+                    else:
+                        print(f"Invalid default value for input {id}: {default_value}")
+                        continue  
+                        
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"Error decoding JSON for input {id}: {str(e)}")
+                except AttributeError:
+                    raise AttributeError(f"Invalid message type for default value: {input_data}")
         except Exception as e:
             raise ValueError(f"Error loading data: {str(e)}")
     
     
-    # def setBounds(self):
-    #     for input in self.inputs:
-    #         if float(input['data']) > 0:
-    #             self.lower_bound.append(0)
-    #             self.upper_bound.append(1)
-    #         else:
-    #             self.lower_bound.append(-1)
-    #             self.upper_bound.append(0)
+    def setBounds(self):
+        for input in self.inputs:
+            if float(input['data']) > 0:
+                self.lower_bound.append(0)
+                self.upper_bound.append(1)
+            else:
+                self.lower_bound.append(-1)
+                self.upper_bound.append(0)
 
     def operators(self) -> list:
         """
