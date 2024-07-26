@@ -40,10 +40,6 @@ class CalibrationData:
             
             inputs = data.get("inputs", []) 
             for input_data in inputs:
-                # Asegurar que input_data es un diccionario
-                if not isinstance(input_data, dict):
-                    raise ValueError("Input data must be a dictionary.")
-
                 id = input_data.get("id")
                 parent = input_data.get("parent")
                 # try:
@@ -59,10 +55,7 @@ class CalibrationData:
                 self.inputs.append({"id": id,"parent": parent})
                 self.lower_bound.append(-1)
                 self.upper_bound.append(0)
-            else:
-                raise ValueError("An error occurred while loading inputs")
-            
-                
+            print(f"Inputs: {self.inputs}")
         except Exception as e:
             raise ValueError(f"Error loading data: {str(e)}")
     
