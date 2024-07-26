@@ -54,7 +54,7 @@ class CalibrationData:
                 # self.inputs.append({"id": id,"parent": parent, "data": default_value})
                 self.inputs.append({"id": id,"parent": parent})
                 self.lower_bound.append(-1)
-                self.upper_bound.append(0)
+                self.upper_bound.append(1)
             print(f"Inputs: {self.inputs}")
         except Exception as e:
             raise ValueError(f"Error loading data: {str(e)}")
