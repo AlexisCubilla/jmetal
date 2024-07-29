@@ -39,7 +39,7 @@ class OptimizerWithCalibration:
             message = {
                 "type": "close",
                     "status": "error",
-                    "message": "Calibration error: No feasible solution could be determined based on the provided constraints."
+                    "message": "No feasible solution could be determined during calibration based on the provided constraints"
             }
         else:
             message = {
