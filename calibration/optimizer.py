@@ -35,19 +35,27 @@ class OptimizerWithCalibration:
             self.websocket.send(str(json.dumps(self.buildMessage(variables))))
         
     def buildMessage(self, variables:List[float]):
-        message = {
-            "type": "close",
-            "data": {
-                "inputs": [
-                    {
-                        "id": input["id"],
-                        "parent": input["parent"],
-                        "data": variable
-                    }
-                    for input, variable in zip(self.data.inputs, variables)
-                ]
+        if not variables:
+            message = {
+                "type": "close",
+                    "status": "error",
+                    "message": "Calibration error: No feasible solution could be determined based on the provided constraints."
             }
-        }
+        else:
+            message = {
+                "type": "close",
+                "status": "success",
+                "data": {
+                    "inputs": [
+                        {
+                            "id": input["id"],
+                            "parent": input["parent"],
+                            "data": variable
+                        }
+                        for input, variable in zip(self.data.inputs, variables)
+                    ]
+                },
+            }
         return message
         
     def mutation(self):

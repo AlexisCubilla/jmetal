@@ -23,7 +23,6 @@ class CalibrationData:
         self.upper_bound = []
         if data:
             self.load_data(data)
-            self.setBounds()
 
         
     def load_data(self, data_received):
@@ -40,7 +39,6 @@ class CalibrationData:
             
             inputs = data.get("inputs", []) 
             for input_data in inputs:
-                # Asegurar que input_data es un diccionario
                 if not isinstance(input_data, dict):
                     raise ValueError("Input data must be a dictionary.")
 
@@ -48,36 +46,16 @@ class CalibrationData:
                 parent = input_data.get("parent")
                 try:
                     metadata = input_data.get("metadata", {})
-                    default_value = json.loads(metadata.get("default", "{}"))
-
-                    if isinstance(default_value, dict):
-                        default_value = default_value.get("num", None)
-                    
-                    if isinstance(default_value, str):
-                        default_value = float(default_value)
-                        
-                    if isinstance(default_value, (int, float)):
-                        self.inputs.append({"id": id, "parent": parent, "data": default_value})
-                    else:
-                        print(f"Invalid default value for input {id}: {default_value}")
-                        continue  
-                        
+                    calibration = metadata.get("calibration", {})
+                    self.lower_bound.append(calibration.get("lower", None))
+                    self.upper_bound.append(calibration.get("upper", None))
+                    self.inputs.append({"id": id, "parent": parent})
                 except json.JSONDecodeError as e:
                     raise ValueError(f"Error decoding JSON for input {id}: {str(e)}")
                 except AttributeError:
                     raise AttributeError(f"Invalid message type for default value: {input_data}")
         except Exception as e:
             raise ValueError(f"Error loading data: {str(e)}")
-    
-    
-    def setBounds(self):
-        for input in self.inputs:
-            if float(input['data']) > 0:
-                self.lower_bound.append(0)
-                self.upper_bound.append(1)
-            else:
-                self.lower_bound.append(-1)
-                self.upper_bound.append(0)
 
     def operators(self) -> list:
         """

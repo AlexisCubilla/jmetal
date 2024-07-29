@@ -30,9 +30,11 @@ class CalibrationProblem(Problem):
         message_dict: dict = json.loads(message)
         type = message_dict["type"]
         if type == "result":
-            for i in range(self.number_of_objectives()): 
-                solution.objectives[i] = message_dict["data"]
-                print ("Error: ", message_dict["data"])
+            print("Result: ", message_dict["data"])
+            for i in range(self.number_of_objectives()):    
+                solution.objectives[i] = message_dict["data"]['objectives']
+            solution.constraints[0] = -1.0 if not message_dict["data"]['constraints'] else 1.0
+        print("Solution: ", solution)
         # self.__evaluate_constraints([1, 2], solution)
         
         return solution
@@ -63,7 +65,7 @@ class CalibrationProblem(Problem):
         return self.data.number_of_objectives
 
     def number_of_constraints(self) -> int:
-        return 0
+        return 1
 
     def name(self) -> str:
         return "Calibration Problem"
